@@ -1,0 +1,3230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FairShare - Expense Splitter</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            /* Brand Colors */
+            --primary: #1cc29f; /* Distinctive Green/Teal */
+            --primary-dark: #159c7f;
+            --primary-light: #e0f7fa;
+            --danger: #ff6565;
+            --danger-dark: #e04f4f;
+            --text-main: #333333;
+            --text-light: #898989;
+            --bg-app: #fcfcfc;
+            --bg-surface: #ffffff;
+            --border: #eeeeee;
+            
+            /* Spacing & Shape */
+            --radius-lg: 16px;
+            --radius-md: 12px;
+            --radius-sm: 8px;
+            --shadow-soft: 0 4px 20px rgba(0,0,0,0.05);
+            --shadow-float: 0 8px 24px rgba(28, 194, 159, 0.3);
+        }
+
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-app);
+            color: var(--text-main);
+            margin: 0;
+            padding-bottom: 100px; /* Space for FAB */
+        }
+
+        /* --- Header --- */
+        header {
+            background: var(--bg-surface);
+            padding: 16px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .logo {
+            font-weight: 700;
+            font-size: 1.25rem;
+            color: var(--primary);
+            letter-spacing: -0.5px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .btn-icon-header {
+            background: none;
+            border: none;
+            font-size: 1.2rem;
+            cursor: pointer;
+            color: var(--text-light);
+            padding: 4px;
+            transition: color 0.2s;
+        }
+        .btn-icon-header:hover {
+            color: var(--primary);
+        }
+
+        /* Letter Avatar Styles */
+        .user-avatar {
+            width: 36px;
+            height: 36px;
+            background: var(--primary-light);
+            color: var(--primary-dark);
+            border-radius: 50%;
+            border: 2px solid white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 1.1rem;
+            text-transform: uppercase;
+            user-select: none;
+        }
+
+        /* --- Main Layout --- */
+        main {
+            padding: 24px;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        /* --- Balance Card --- */
+        .balance-card {
+            background: var(--bg-surface);
+            border-radius: var(--radius-lg);
+            padding: 24px;
+            box-shadow: var(--shadow-soft);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 32px;
+            border: 1px solid var(--border);
+        }
+
+        .balance-col {
+            flex: 1;
+            text-align: center;
+        }
+
+        .balance-col label {
+            font-size: 0.65rem; /* Slightly smaller to fit 3 cols */
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-light);
+            font-weight: 600;
+            display: block;
+            margin-bottom: 4px;
+            white-space: nowrap; /* Prevent wrapping if possible, or allow if needed */
+        }
+        
+        @media (max-width: 400px) {
+            .balance-col label {
+                white-space: normal;
+                font-size: 0.6rem;
+            }
+        }
+
+        .balance-col .amount {
+            font-size: 1.25rem;
+            font-weight: 700;
+        }
+
+        .divider {
+            width: 1px;
+            height: 40px;
+            background-color: var(--border);
+            margin: 0 12px;
+        }
+
+        .text-green { color: var(--primary); }
+        .text-red { color: var(--danger); }
+        .text-blue { color: #3b82f6; } /* New Blue for Settlements */
+        .text-gray { color: var(--text-light); }
+
+        /* --- Section Headers --- */
+        h2 {
+            font-size: 1rem;
+            color: var(--text-light);
+            margin-bottom: 16px;
+            font-weight: 600;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        /* Action Links */
+        .action-link {
+            font-size: 0.85rem;
+            color: white;
+            background: var(--primary);
+            text-decoration: none;
+            cursor: pointer;
+            padding: 6px 14px;
+            border-radius: 20px;
+            transition: background 0.2s, transform 0.1s;
+            font-weight: 600;
+            box-shadow: 0 2px 4px rgba(28, 194, 159, 0.2);
+        }
+        
+        .action-link:hover {
+            background: var(--primary-dark);
+            transform: translateY(-1px);
+        }
+        
+        .action-link:active {
+             transform: translateY(0);
+        }
+
+        .reset-link {
+            font-size: 0.75rem;
+            color: var(--text-light);
+            text-decoration: underline;
+            cursor: pointer;
+            margin-right: auto;
+        }
+
+        /* --- Lists --- */
+        .list-container {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 32px;
+        }
+        
+        /* Accordion Group Styles */
+        .group-block {
+            background: var(--bg-surface);
+            border-radius: var(--radius-md);
+            overflow: hidden;
+            border: 1px solid transparent;
+            transition: all 0.2s;
+        }
+        
+        .group-block.expanded {
+            border-color: var(--border);
+            box-shadow: var(--shadow-soft);
+        }
+
+        .group-header {
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            color: var(--text-main);
+            letter-spacing: 0.5px;
+            font-weight: 700;
+            padding: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            background: var(--bg-surface);
+            user-select: none;
+        }
+        
+        .group-header:hover {
+            background: #fafafa;
+        }
+        
+        .group-header-left {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .group-chevron {
+            font-size: 1.2rem;
+            color: var(--text-light);
+            transition: transform 0.3s;
+            line-height: 1;
+        }
+        
+        .group-block.expanded .group-chevron {
+            transform: rotate(90deg);
+            color: var(--primary);
+        }
+        
+        .group-content {
+            display: none; /* Hidden by default */
+            padding: 0 16px 16px 16px;
+        }
+        
+        .group-block.expanded .group-content {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            animation: slideDown 0.2s ease-out;
+        }
+        
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .group-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        /* Icons */
+        .btn-icon-group {
+            background: #f5f5f5;
+            border: none;
+            font-size: 1.2rem;
+            line-height: 1;
+            cursor: pointer;
+            padding: 6px;
+            border-radius: 8px;
+            opacity: 1;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 32px;
+            height: 32px;
+        }
+        
+        .btn-icon-group:hover {
+            background: #e0e0e0;
+            transform: translateY(-1px);
+            filter: brightness(0.95);
+        }
+        
+        /* Specific colors for icons */
+        .btn-icon-group.settle { color: #10b981; background: #d1fae5; } /* Green/Teal */
+        .btn-icon-group.breakdown { color: #3b82f6; background: #dbeafe; } /* Blue */
+        .btn-icon-group.summary { color: #8b5cf6; background: #ede9fe; } /* Purple */
+        .btn-icon-group.export { color: #f59e0b; background: #fef3c7; } /* Orange/Yellow */
+        .btn-icon-group.delete { color: #ef4444; background: #fee2e2; } /* Red */
+
+        /* List Item (Fixed Layout) */
+        .list-item {
+            background: #fcfcfc; 
+            padding: 12px 16px;
+            border-radius: var(--radius-sm);
+            display: flex; 
+            align-items: center;
+            justify-content: space-between;
+            border: 1px solid var(--border);
+            gap: 12px;
+        }
+
+        .item-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .icon-box {
+            width: 40px;
+            height: 40px;
+            background: #f0fdf9;
+            color: var(--primary);
+            border-radius: var(--radius-sm);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+        }
+
+        .item-details h3 {
+            margin: 0;
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: var(--text-main);
+        }
+
+        .item-details p {
+            margin: 4px 0 0 0;
+            font-size: 0.8rem;
+            color: var(--text-light);
+        }
+
+        .item-right {
+            text-align: right;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 4px;
+        }
+
+        .item-right .status {
+            font-size: 0.7rem;
+            display: block;
+            color: var(--text-light);
+        }
+
+        .item-right .value {
+            font-weight: 700;
+            font-size: 0.95rem;
+        }
+
+        /* Settlement Item Styles */
+        .list-item.settlement {
+            background: #f8fcfb;
+            border-left: 4px solid var(--primary);
+        }
+        .list-item.settlement .icon-box {
+            background: var(--primary);
+            color: white;
+        }
+        
+        /* Edit Button in List Item */
+        .btn-edit-activity {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text-light);
+            border-radius: 50%;
+            width: 28px;
+            height: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            margin-left: 12px;
+            font-size: 0.8rem;
+            transition: all 0.2s;
+        }
+
+        .btn-edit-activity:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+            background: #f0fdf9;
+        }
+        
+        /* Friend Delete Button */
+        .btn-delete-friend {
+            background: transparent;
+            border: none;
+            color: #e0e0e0;
+            font-size: 1.5rem;
+            line-height: 1;
+            margin-left: 16px;
+            cursor: pointer;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            transition: color 0.2s;
+        }
+        .btn-delete-friend:hover {
+            color: var(--danger);
+        }
+
+        /* --- FAB (Floating Action Button) --- */
+        .fab {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            width: 60px;
+            height: 60px;
+            background: var(--primary);
+            color: white;
+            border-radius: 50%;
+            border: none;
+            box-shadow: var(--shadow-float);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            transition: transform 0.2s, background 0.2s;
+            z-index: 100;
+        }
+
+        .fab:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+        }
+
+        /* --- Modal --- */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.4);
+            backdrop-filter: blur(4px);
+            z-index: 200;
+            display: none; /* Hidden by default */
+            align-items: flex-end; /* Sheet style on mobile */
+            justify-content: center;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            width: 100%;
+            max-width: 500px;
+            border-radius: 24px 24px 0 0; /* Top rounded corners */
+            padding: 24px;
+            animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            box-shadow: 0 -4px 20px rgba(0,0,0,0.1);
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        @media (min-width: 500px) {
+            .modal-overlay {
+                align-items: center;
+            }
+            .modal-content {
+                border-radius: var(--radius-lg);
+                margin: 20px;
+            }
+        }
+
+        @keyframes slideUp {
+            from { transform: translateY(100%); }
+            to { transform: translateY(0); }
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+
+        .modal-header h3 {
+            margin: 0;
+            font-size: 1.25rem;
+        }
+
+        .btn-close {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            color: var(--text-light);
+            cursor: pointer;
+            padding: 4px;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 12px;
+            margin-top: 24px;
+        }
+        
+        .modal-text {
+            color: var(--text-main);
+            line-height: 1.5;
+            margin-bottom: 10px;
+        }
+        
+        .warning-text {
+            color: var(--danger);
+            font-weight: 600;
+            font-size: 0.9rem;
+            background: #fff0f0;
+            padding: 12px;
+            border-radius: 8px;
+            margin-top: 10px;
+        }
+        
+        /* Summary Debt Line */
+        .debt-line {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: 1px solid var(--border);
+        }
+        .debt-line:last-child {
+            border-bottom: none;
+        }
+        .debt-part {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+        .debt-arrow {
+            color: var(--text-light);
+            font-size: 0.8rem;
+            margin: 0 8px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .debt-amount {
+            font-weight: 700;
+            color: var(--primary);
+        }
+        .btn-settle-small {
+            background: white;
+            border: 1px solid var(--primary);
+            color: var(--primary);
+            font-size: 0.7rem;
+            padding: 2px 8px;
+            border-radius: 12px;
+            cursor: pointer;
+            margin-top: 4px;
+        }
+        .btn-settle-small:hover {
+            background: var(--primary);
+            color: white;
+        }
+        
+        /* Breakdown List */
+        .breakdown-section {
+            margin-bottom: 20px;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            overflow: hidden;
+            background: white;
+        }
+        .breakdown-user {
+            background: #f9f9f9;
+            padding: 12px 16px;
+            font-weight: 600;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border);
+        }
+        .breakdown-columns {
+            display: flex;
+            flex-direction: column;
+        }
+        .breakdown-col {
+            padding: 0;
+        }
+        .breakdown-col-header {
+            padding: 8px 16px;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            font-weight: 700;
+            background: #fcfcfc;
+            border-bottom: 1px solid var(--border);
+            border-top: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+        }
+        .breakdown-col-header.paid { color: var(--primary); }
+        .breakdown-col-header.split { color: #e67e22; border-top: 1px solid var(--border); }
+        
+        .breakdown-item {
+            padding: 10px 16px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.85rem;
+            color: var(--text-main);
+        }
+        .breakdown-item:last-child { border-bottom: none; }
+        .breakdown-item span.date {
+            font-size: 0.75rem;
+            margin-right: 8px;
+            color: var(--text-light);
+            min-width: 50px;
+            display: inline-block;
+        }
+
+        /* Form Styles */
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 0.85rem;
+            color: var(--text-light);
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 14px;
+            border: 2px solid var(--border);
+            border-radius: var(--radius-md);
+            font-size: 1rem;
+            font-family: inherit;
+            transition: border-color 0.2s;
+            background: white;
+        }
+        
+        .form-input:disabled {
+            background: #f5f5f5;
+            color: var(--text-light);
+            cursor: not-allowed;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .input-group {
+            position: relative;
+        }
+        
+        .currency-symbol {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-light);
+            font-weight: 600;
+        }
+
+        .input-with-icon {
+            padding-left: 30px;
+        }
+
+        .split-options {
+            display: flex;
+            gap: 10px;
+        }
+
+        .split-option {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            text-align: center;
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+
+        .split-option.active {
+            background: #f0fdf9;
+            border-color: var(--primary);
+            color: var(--primary);
+            font-weight: 600;
+        }
+
+        .btn-submit {
+            width: 100%;
+            padding: 16px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: var(--radius-md);
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+
+        .btn-submit:hover {
+            background: var(--primary-dark);
+        }
+
+        .btn-secondary {
+            width: 100%;
+            padding: 16px;
+            background: #f5f5f5;
+            color: var(--text-main);
+            border: none;
+            border-radius: var(--radius-md);
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        
+        .btn-danger-action {
+            width: 100%;
+            padding: 16px;
+            background: var(--danger);
+            color: white;
+            border: none;
+            border-radius: var(--radius-md);
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        
+        .btn-danger-action:hover {
+            background: var(--danger-dark);
+        }
+
+        /* --- Multi-Select Chips & Inputs --- */
+        .chips-container {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-top: 12px;
+        }
+
+        .chip {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 12px;
+            background: #fcfcfc;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            user-select: none;
+        }
+
+        /* Standard Equal Split Selected State */
+        .chip.selectable.selected {
+            background: #e8fcf7;
+            border-color: var(--primary);
+            color: var(--primary-dark);
+        }
+
+        /* For non-selectable modes (Shares/Percent) */
+        .chip.input-mode {
+            cursor: default;
+            background: white;
+        }
+
+        .chip-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .chip-right {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .chip input[type="checkbox"] {
+            display: none;
+        }
+        
+        /* Split Input (Shares/Percent) */
+        .split-input-val {
+            width: 70px;
+            padding: 6px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            text-align: right;
+            font-size: 0.9rem;
+        }
+        
+        .split-input-label {
+            font-size: 0.8rem;
+            color: var(--text-light);
+            min-width: 16px;
+        }
+
+        /* Letter Avatar for Chips */
+        .chip-avatar {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: var(--primary-light);
+            color: var(--primary-dark);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            user-select: none;
+        }
+        
+        /* Split Tabs */
+        .split-tabs {
+            display: flex;
+            background: #f5f5f5;
+            padding: 4px;
+            border-radius: 10px;
+            margin-bottom: 8px;
+        }
+        
+        .split-tab {
+            flex: 1;
+            text-align: center;
+            padding: 8px;
+            font-size: 0.85rem;
+            border-radius: 8px;
+            cursor: pointer;
+            color: var(--text-light);
+            font-weight: 500;
+        }
+        
+        .split-tab.active {
+            background: white;
+            color: var(--text-main);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            font-weight: 600;
+        }
+
+        /* --- Multi-Payer Inputs --- */
+        .multi-payer-list {
+            display: none; /* Hidden by default */
+            background: #f9f9f9;
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            margin-top: 8px;
+        }
+
+        .multi-payer-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+        
+        .multi-payer-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .multi-payer-label {
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .multi-payer-input {
+            width: 80px;
+            padding: 6px;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            text-align: right;
+        }
+        
+        .multi-payer-remaining {
+            text-align: right;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-light);
+            margin-top: 8px;
+            padding-top: 8px;
+            border-top: 1px dashed var(--border);
+        }
+        .multi-payer-remaining.error {
+            color: var(--danger);
+        }
+        .multi-payer-remaining.success {
+            color: var(--primary);
+        }
+        
+        /* Tip Calculator specific styles */
+        .tip-calculator-body {
+             padding-top: 10px;
+        }
+        .tip-options {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-bottom: 15px;
+        }
+        .tip-options .chip.selectable {
+            padding: 8px 16px;
+            background: #f0fdf9;
+            border-color: transparent;
+            color: var(--primary-dark);
+        }
+        .tip-options .chip.selectable.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary-dark);
+        }
+        .tip-results {
+            background: #fafafa;
+            padding: 15px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            margin-top: 20px;
+        }
+        .tip-result-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+            color: var(--text-light);
+        }
+        .tip-result-row:last-child { margin-bottom: 0; }
+        .tip-result-row.total {
+            border-top: 1px solid var(--border);
+            margin-top: 8px;
+            padding-top: 8px;
+            font-weight: 700;
+            font-size: 1.1rem;
+            color: var(--text-main);
+        }
+        .tip-value {
+            font-weight: 600;
+            color: var(--text-main);
+        }
+        .tip-result-row.total .tip-value {
+            color: var(--primary);
+        }
+
+        /* Utility */
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-light);
+            font-size: 0.9rem;
+            background: var(--bg-surface);
+            border-radius: var(--radius-md);
+            border: 1px dashed var(--border);
+        }
+        
+        optgroup {
+            font-weight: 700;
+            color: var(--primary);
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="logo">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <rect x="2" y="4" width="20" height="16" rx="4" stroke="currentColor" stroke-width="2"/>
+                <path d="M12 8V16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                <path d="M8 12H16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+            FairShare
+        </div>
+        <div class="header-right">
+            <button class="btn-icon-header" onclick="openTipModal()" title="Tip Calculator">🧮</button>
+            <button class="btn-icon-header" onclick="openSettingsModal()" title="Settings">⚙️</button>
+            <div class="user-avatar">
+                A
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <!-- Dashboard Summary -->
+        <section class="balance-card">
+            <div class="balance-col">
+                <label>Total Group Debt</label>
+                <div class="amount text-red" id="total-owe">$0.00</div>
+            </div>
+            <div class="divider"></div>
+            <div class="balance-col">
+                <label>Pending Settlement</label>
+                <div class="amount text-green" id="total-owed">$0.00</div>
+            </div>
+            <div class="divider"></div>
+             <div class="balance-col">
+                <label>Total Settled</label>
+                <div class="amount text-blue" id="total-settled">$0.00</div>
+            </div>
+        </section>
+
+        <!-- Friends List (Accordion) -->
+        <section>
+            <h2>
+                <span onclick="openResetModal()" class="reset-link">Reset Demo</span>
+                <div class="header-actions">
+                    <span class="action-link" onclick="openGroupModal()">+ Group</span>
+                    <span class="action-link" onclick="openFriendModal()">+ Friend</span>
+                </div>
+            </h2>
+            <div id="friends-list" class="list-container">
+                <!-- Injected by JS -->
+            </div>
+        </section>
+
+        <!-- Recent Activity -->
+        <section>
+            <h2 id="activity-header">Recent Activity</h2>
+            <div id="activity-list" class="list-container">
+                <!-- Injected by JS -->
+            </div>
+        </section>
+    </main>
+
+    <!-- FAB -->
+    <button class="fab" onclick="openExpenseModal()">
+        +
+    </button>
+
+    <!-- Add/Edit Expense Modal -->
+    <div id="expense-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="expense-modal-title">Add expense</h3>
+                <button class="btn-close" onclick="closeModal('expense-modal')">&times;</button>
+            </div>
+            
+            <form id="expense-form">
+                <!-- 1. Select Group Context -->
+                <div class="form-group">
+                    <label class="form-label">Group</label>
+                    <select id="expense-group-select" class="form-input" onchange="updateExpenseParticipants()">
+                        <!-- Populated by JS -->
+                    </select>
+                </div>
+
+                <!-- Date Input -->
+                <div class="form-group">
+                    <label class="form-label">Date</label>
+                    <input type="date" id="date-input" class="form-input" required>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Description</label>
+                    <div class="input-group">
+                        <input type="text" id="desc-input" class="form-input" placeholder="e.g. Dinner at Mario's" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Amount</label>
+                    <div class="input-group">
+                        <span class="currency-symbol">$</span>
+                        <input type="number" id="amount-input" class="form-input input-with-icon" placeholder="0.00" step="0.01" oninput="updateRemainingBalance()" required>
+                    </div>
+                </div>
+
+                <!-- 2. Who Paid? -->
+                <div class="form-group">
+                    <label class="form-label">Who paid?</label>
+                    <select id="payer-select" class="form-input" onchange="handlePayerChange()">
+                        <!-- Populated by JS based on Group -->
+                    </select>
+                    
+                    <!-- Dynamic Multi-Payer List -->
+                    <div id="multi-payer-container" class="multi-payer-list">
+                        <!-- Inputs injected here -->
+                    </div>
+                </div>
+
+                <!-- 3. Split Options -->
+                <div class="form-group">
+                    <label class="form-label">Split with whom?</label>
+                    
+                    <!-- Split Tabs -->
+                    <div class="split-tabs">
+                        <div class="split-tab active" onclick="setSplitMethod('equal')" id="tab-equal">Equally</div>
+                        <div class="split-tab" onclick="setSplitMethod('shares')" id="tab-shares">By Shares</div>
+                        <div class="split-tab" onclick="setSplitMethod('percent')" id="tab-percent">By %</div>
+                    </div>
+
+                    <!-- Dynamic List -->
+                    <div id="split-with-container" class="chips-container">
+                        <!-- Injected here -->
+                    </div>
+                    
+                    <p style="font-size:0.75rem; color:var(--text-light); margin-top:8px; text-align:right;" id="split-summary">
+                        Split evenly among selected
+                    </p>
+                </div>
+
+                <button type="submit" class="btn-submit" id="btn-save-expense">Save Expense</button>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Settle Up Modal -->
+    <div id="settle-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Settle Up</h3>
+                <button class="btn-close" onclick="closeModal('settle-modal')">&times;</button>
+            </div>
+            
+            <form id="settle-form">
+                <div class="form-group">
+                    <label class="form-label">Who is paying?</label>
+                    <select id="settle-payer-select" class="form-input" onchange="updateSettleSuggestion()">
+                         <!-- Populated by JS -->
+                    </select>
+                </div>
+                
+                <div style="text-align:center; margin: -10px 0 15px 0; font-size: 1.5rem; color: var(--text-light);">
+                    &darr;
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">To whom?</label>
+                    <select id="settle-recipient-select" class="form-input" onchange="updateSettleSuggestion()">
+                         <!-- Populated by JS -->
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Amount</label>
+                    <div class="input-group">
+                        <span class="currency-symbol">$</span>
+                        <input type="number" id="settle-amount-input" class="form-input input-with-icon" placeholder="0.00" step="0.01" required>
+                    </div>
+                </div>
+                
+                 <div class="form-group">
+                    <label class="form-label">Date</label>
+                    <input type="date" id="settle-date-input" class="form-input" required>
+                </div>
+
+                <button type="submit" class="btn-submit">Record Payment</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Summary Modal -->
+    <div id="summary-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="summary-title">Debts Summary</h3>
+                <button class="btn-close" onclick="closeModal('summary-modal')">&times;</button>
+            </div>
+            <div style="margin-bottom:16px; font-size:0.9rem; color:var(--text-light);">
+                Simplified debts for least number of transactions.
+            </div>
+            <div id="summary-list" class="list-container">
+                <!-- Injected via JS -->
+            </div>
+            <div class="modal-actions">
+                 <button class="btn-secondary" onclick="closeModal('summary-modal')">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Breakdown Modal -->
+    <div id="breakdown-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="breakdown-title">Expense Breakdown</h3>
+                <button class="btn-close" onclick="closeModal('breakdown-modal')">&times;</button>
+            </div>
+            <div style="margin-bottom:16px; font-size:0.9rem; color:var(--text-light);">
+                List of expenses incurred (paid) by each participant.
+            </div>
+            <div id="breakdown-list" style="max-height: 60vh; overflow-y: auto;">
+                <!-- Injected via JS -->
+            </div>
+            <div class="modal-actions">
+                 <button class="btn-secondary" onclick="closeModal('breakdown-modal')">Close</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Tip Calculator Modal (New) -->
+    <div id="tip-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Tip Calculator</h3>
+                <button class="btn-close" onclick="closeModal('tip-modal')">&times;</button>
+            </div>
+            <div class="tip-calculator-body">
+                <!-- Inputs -->
+                <div class="form-group">
+                    <label class="form-label">Bill Amount</label>
+                    <div class="input-group">
+                        <span class="currency-symbol">$</span>
+                        <input type="number" id="tip-bill-amount" class="form-input input-with-icon" placeholder="0.00" step="0.01" oninput="calculateTip()">
+                    </div>
+                </div>
+                 <div class="form-group">
+                    <label class="form-label">Tip Percentage</label>
+                    <div class="tip-options">
+                        <button class="chip selectable active" id="tip-10" onclick="setTipPct(10)">10%</button>
+                        <button class="chip selectable" id="tip-15" onclick="setTipPct(15)">15%</button>
+                        <button class="chip selectable" id="tip-18" onclick="setTipPct(18)">18%</button>
+                        <button class="chip selectable" id="tip-20" onclick="setTipPct(20)">20%</button>
+                        <input type="number" id="tip-custom-pct" placeholder="Custom %" class="form-input" style="width:100px; padding:8px;" oninput="setCustomTip()">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Split by</label>
+                    <div style="display:flex; align-items:center; gap:10px;">
+                        <button class="btn-icon-group" style="width:40px; height:40px;" onclick="adjustSplit(-1)">-</button>
+                        <input type="number" id="tip-split-count" class="form-input" value="1" style="text-align:center; width:60px;" readonly>
+                         <button class="btn-icon-group" style="width:40px; height:40px;" onclick="adjustSplit(1)">+</button>
+                    </div>
+                </div>
+                
+                <!-- Results -->
+                <div class="tip-results">
+                     <div class="tip-result-row">
+                        <span>Tip Amount</span>
+                        <span class="tip-value" id="res-tip-amount">$0.00</span>
+                     </div>
+                     <div class="tip-result-row total">
+                        <span>Total to Pay</span>
+                        <span class="tip-value" id="res-total-amount">$0.00</span>
+                     </div>
+                     <div class="tip-result-row">
+                        <span>Per Person</span>
+                        <span class="tip-value" id="res-per-person">$0.00</span>
+                     </div>
+                </div>
+            </div>
+            <div class="modal-actions">
+                 <button class="btn-secondary" onclick="closeModal('tip-modal')">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Friend Modal -->
+    <div id="friend-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Add new friend</h3>
+                <button class="btn-close" onclick="closeModal('friend-modal')">&times;</button>
+            </div>
+            <form id="friend-form">
+                <div class="form-group">
+                    <label class="form-label">Name</label>
+                    <input type="text" id="friend-name-input" class="form-input" placeholder="e.g. John Doe" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Assign to Group</label>
+                    <select id="group-select-assign" class="form-input">
+                        <!-- Populated by JS -->
+                    </select>
+                </div>
+                <button type="submit" class="btn-submit">Add Friend</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Add Group Modal -->
+    <div id="group-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Create new group</h3>
+                <button class="btn-close" onclick="closeModal('group-modal')">&times;</button>
+            </div>
+            <form id="group-form">
+                <div class="form-group">
+                    <label class="form-label">Group Name</label>
+                    <input type="text" id="group-name-input" class="form-input" placeholder="e.g. Ski Trip 2024" required>
+                </div>
+                <button type="submit" class="btn-submit">Create Group</button>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Settings Modal -->
+    <div id="settings-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Data & Settings</h3>
+                <button class="btn-close" onclick="closeModal('settings-modal')">&times;</button>
+            </div>
+            
+            <div style="display:flex; flex-direction:column; gap:16px;">
+                <div>
+                    <p class="modal-text">Backup your data to a JSON file or restore from a previous backup.</p>
+                </div>
+                
+                <button class="btn-submit" onclick="exportData()">
+                    ⬇️ Export Data to JSON
+                </button>
+                
+                <button class="btn-secondary" onclick="document.getElementById('import-file').click()">
+                    ⬆️ Import Data from JSON
+                </button>
+                <input type="file" id="import-file" accept=".json" style="display:none;" onchange="importData(event)">
+            </div>
+
+            <div class="modal-actions">
+                 <button class="btn-secondary" onclick="closeModal('settings-modal')">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Confirm Delete Modal -->
+    <div id="confirm-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="confirm-title">Confirm Delete</h3>
+                <button class="btn-close" onclick="closeModal('confirm-modal')">&times;</button>
+            </div>
+            <div id="confirm-message" class="modal-text">
+                Are you sure you want to delete this group?
+            </div>
+            <div id="confirm-warning" class="warning-text" style="display:none;">
+                <!-- Warning injected here -->
+            </div>
+            <div class="modal-actions">
+                <button class="btn-secondary" onclick="closeModal('confirm-modal')">Cancel</button>
+                <button class="btn-danger-action" id="btn-confirm-action">Delete</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Alert/Warning Modal -->
+    <div id="alert-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Action Required</h3>
+                <button class="btn-close" onclick="closeModal('alert-modal')">&times;</button>
+            </div>
+            <div class="modal-text">
+                Please create a group first before adding friends.
+            </div>
+            <div class="modal-actions">
+                <button class="btn-submit" onclick="redirectGroupCreation()">Create Group</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Reset Confirmation Modal -->
+     <div id="reset-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Reset App?</h3>
+                <button class="btn-close" onclick="closeModal('reset-modal')">&times;</button>
+            </div>
+            <div class="modal-text">
+                This will erase all your current data and restore the demo data. This cannot be undone.
+            </div>
+            <div class="modal-actions">
+                <button class="btn-secondary" onclick="closeModal('reset-modal')">Cancel</button>
+                <button class="btn-danger-action" onclick="executeReset()">Reset All</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- Initial Data / State ---
+        const defaultGroups = [
+            { id: 1, name: 'Apartment' },
+            { id: 2, name: 'Trip to Cabo' }
+        ];
+
+        const defaultFriends = [
+            { id: 1, name: 'Sarah', groupId: 1, avatar: 'Annie', balance: 0 }, 
+            { id: 2, name: 'Mike', groupId: 1, avatar: 'Felix', balance: 0 }, 
+            { id: 3, name: 'Jessica', groupId: 2, avatar: 'Sorelle', balance: 0 }
+        ];
+
+        const defaultActivities = [
+            { 
+                id: 101, 
+                groupId: 1,
+                desc: 'Uber to Airport', 
+                amount: 31.00, 
+                date: '2023-10-24',
+                payers: [{id: 2, amount: 31.00}], 
+                consumers: [{id: 1, amount: 15.50}, {id: 2, amount: 15.50}], 
+                payerName: 'Mike', 
+                splitMethod: 'equal',
+                type: 'expense'
+            },
+            { 
+                id: 102, 
+                groupId: 2, // Trip to Cabo
+                desc: 'Concert Tickets', 
+                amount: 48.00, 
+                date: '2023-10-22',
+                payers: [{id: 2, amount: 48.00}], 
+                consumers: [{id: 3, amount: 48.00}], 
+                payerName: 'Mike',
+                splitMethod: 'equal',
+                type: 'expense'
+            }
+        ];
+
+        // Load from LocalStorage or use defaults
+        let groups = JSON.parse(localStorage.getItem('fs_groups')) || defaultGroups;
+        let friends = JSON.parse(localStorage.getItem('fs_friends')) || defaultFriends;
+        let activities = JSON.parse(localStorage.getItem('fs_activities')) || defaultActivities;
+        
+        let groupToDeleteId = null;
+        let friendToDeleteId = null; 
+        let activityToDeleteId = null; 
+        let currentSplitMethod = 'equal'; 
+        let editingActivityId = null; 
+        
+        // Accordion State
+        let expandedGroupId = null;
+        
+        // Tip Calc State
+        let currentTipPct = 10;
+
+        // --- DOM Elements ---
+        const friendsListEl = document.getElementById('friends-list');
+        const activityListEl = document.getElementById('activity-list');
+        const activityHeader = document.getElementById('activity-header');
+        const totalOweEl = document.getElementById('total-owe');
+        const totalOwedEl = document.getElementById('total-owed');
+        
+        const expenseModal = document.getElementById('expense-modal');
+        const friendModal = document.getElementById('friend-modal');
+        const groupModal = document.getElementById('group-modal');
+        const summaryModal = document.getElementById('summary-modal');
+        const breakdownModal = document.getElementById('breakdown-modal');
+        const settleModal = document.getElementById('settle-modal');
+        const settingsModal = document.getElementById('settings-modal');
+        const confirmModal = document.getElementById('confirm-modal');
+        const alertModal = document.getElementById('alert-modal');
+        const resetModal = document.getElementById('reset-modal');
+        const tipModal = document.getElementById('tip-modal');
+        
+        const expenseForm = document.getElementById('expense-form');
+        const friendForm = document.getElementById('friend-form');
+        const groupForm = document.getElementById('group-form');
+        const settleForm = document.getElementById('settle-form');
+        
+        // Expense Elements
+        const expenseGroupSelect = document.getElementById('expense-group-select');
+        const payerSelect = document.getElementById('payer-select');
+        const splitContainer = document.getElementById('split-with-container');
+        const multiPayerContainer = document.getElementById('multi-payer-container');
+        const splitSummary = document.getElementById('split-summary');
+        const dateInput = document.getElementById('date-input');
+        const expenseModalTitle = document.getElementById('expense-modal-title');
+        const btnSaveExpense = document.getElementById('btn-save-expense');
+
+        const groupSelectAssign = document.getElementById('group-select-assign');
+        const confirmWarning = document.getElementById('confirm-warning');
+        const confirmTitle = document.getElementById('confirm-title');
+        const confirmMessage = document.getElementById('confirm-message');
+        const btnConfirmAction = document.getElementById('btn-confirm-action');
+        
+        const summaryList = document.getElementById('summary-list');
+        const summaryTitle = document.getElementById('summary-title');
+        const breakdownList = document.getElementById('breakdown-list');
+        const breakdownTitle = document.getElementById('breakdown-title');
+        
+        const settlePayerSelect = document.getElementById('settle-payer-select');
+        const settleRecipientSelect = document.getElementById('settle-recipient-select');
+        const settleAmountInput = document.getElementById('settle-amount-input');
+        const settleDateInput = document.getElementById('settle-date-input');
+        
+        // Tip Elements
+        const tipBillAmount = document.getElementById('tip-bill-amount');
+        const tipCustomPct = document.getElementById('tip-custom-pct');
+        const tipSplitCount = document.getElementById('tip-split-count');
+        const resTipAmount = document.getElementById('res-tip-amount');
+        const resTotalAmount = document.getElementById('res-total-amount');
+        const resPerPerson = document.getElementById('res-per-person');
+
+
+        // --- Core Logic ---
+        
+        // Init Logic for Accordion
+        if (groups.length > 0) {
+            expandedGroupId = groups[0].id;
+        }
+
+        function saveData() {
+            localStorage.setItem('fs_groups', JSON.stringify(groups));
+            localStorage.setItem('fs_friends', JSON.stringify(friends));
+            localStorage.setItem('fs_activities', JSON.stringify(activities));
+            render();
+        }
+        
+        // --- TIP CALCULATOR LOGIC ---
+        function openTipModal() {
+            tipModal.classList.add('active');
+            // Reset state
+            tipBillAmount.value = '';
+            tipSplitCount.value = 1;
+            tipCustomPct.value = '';
+            setTipPct(15); // Default to 15%
+        }
+
+        function setTipPct(pct) {
+            currentTipPct = pct;
+            // Clear custom input if we picked a preset
+            if (pct !== 'custom') {
+                 tipCustomPct.value = '';
+                 // Visual updates
+                 document.querySelectorAll('.tip-options .chip').forEach(c => c.classList.remove('active'));
+                 document.getElementById(`tip-${pct}`)?.classList.add('active');
+            } else {
+                 // Custom was typed, deselect others
+                 document.querySelectorAll('.tip-options .chip').forEach(c => c.classList.remove('active'));
+            }
+            calculateTip();
+        }
+        
+        function setCustomTip() {
+             const val = parseFloat(tipCustomPct.value);
+             if (!isNaN(val)) {
+                 setTipPct('custom');
+                 currentTipPct = val; // Use input value
+                 calculateTip();
+             }
+        }
+
+        function adjustSplit(delta) {
+            let count = parseInt(tipSplitCount.value) || 1;
+            count += delta;
+            if (count < 1) count = 1;
+            tipSplitCount.value = count;
+            calculateTip();
+        }
+        
+        function calculateTip() {
+            const bill = parseFloat(tipBillAmount.value) || 0;
+            let pct = currentTipPct;
+            if (tipCustomPct.value !== '') {
+                pct = parseFloat(tipCustomPct.value) || 0;
+            }
+            
+            const count = parseInt(tipSplitCount.value) || 1;
+            
+            const tipAmt = bill * (pct / 100);
+            const total = bill + tipAmt;
+            const perPerson = total / count;
+            
+            resTipAmount.innerText = `$${tipAmt.toFixed(2)}`;
+            resTotalAmount.innerText = `$${total.toFixed(2)}`;
+            resPerPerson.innerText = `$${perPerson.toFixed(2)}`;
+        }
+
+        // --- Helper Functions Defined First for Global Access ---
+        
+        function simplifyDebts(groupFriends) {
+            let debtors = groupFriends.filter(f => f.balance < -0.01).map(f => ({...f}));
+            let creditors = groupFriends.filter(f => f.balance > 0.01).map(f => ({...f}));
+            
+            debtors.sort((a, b) => a.balance - b.balance); 
+            creditors.sort((a, b) => b.balance - a.balance); 
+
+            let transactions = [];
+            let i = 0;
+            let j = 0;
+
+            while (i < debtors.length && j < creditors.length) {
+                let debtor = debtors[i];
+                let creditor = creditors[j];
+
+                let amount = Math.min(Math.abs(debtor.balance), creditor.balance);
+                amount = Math.round(amount * 100) / 100;
+
+                if (amount > 0) {
+                    transactions.push({
+                        from: debtor.name,
+                        to: creditor.name,
+                        fromId: debtor.id,
+                        toId: creditor.id,
+                        amount: amount,
+                        fromAvatar: debtor.avatar,
+                        toAvatar: creditor.avatar
+                    });
+                }
+
+                debtor.balance += amount;
+                creditor.balance -= amount;
+
+                if (Math.abs(debtor.balance) < 0.01) i++;
+                if (creditor.balance < 0.01) j++;
+            }
+
+            return transactions;
+        }
+        
+        function updateSettleSuggestion() {
+             const payerId = parseInt(settlePayerSelect.value);
+             const recipientId = parseInt(settleRecipientSelect.value);
+             
+             if(!payerId || !recipientId) return;
+             
+             const payer = friends.find(f => f.id === payerId);
+             if(!payer) return;
+             
+             const groupFriends = friends.filter(f => f.groupId === payer.groupId);
+             const suggestions = simplifyDebts(groupFriends);
+             
+             const match = suggestions.find(s => s.fromId === payerId && s.toId === recipientId);
+             
+             if (match) {
+                 settleAmountInput.value = match.amount.toFixed(2);
+             } else {
+                 settleAmountInput.value = '';
+             }
+        }
+
+        function openSettleModal(groupId, prefillPayerId, prefillRecipientId, prefillAmount) {
+            const group = groups.find(g => g.id === groupId);
+            const groupFriends = friends.filter(f => f.groupId === groupId);
+            
+            if(!group || groupFriends.length < 2) {
+                alert("Need at least 2 people in group to settle.");
+                return;
+            }
+            
+            const options = groupFriends.map(f => `<option value="${f.id}">${f.name}</option>`).join('');
+            settlePayerSelect.innerHTML = options;
+            settleRecipientSelect.innerHTML = options;
+            
+            let amountToFill = '';
+
+            if(prefillPayerId && prefillRecipientId && prefillAmount) {
+                settlePayerSelect.value = prefillPayerId;
+                settleRecipientSelect.value = prefillRecipientId;
+                amountToFill = prefillAmount;
+            } else {
+                const suggestions = simplifyDebts(groupFriends);
+                if (suggestions.length > 0) {
+                    const suggestion = suggestions[0];
+                    settlePayerSelect.value = suggestion.fromId;
+                    settleRecipientSelect.value = suggestion.toId;
+                    amountToFill = suggestion.amount;
+                } else {
+                    settlePayerSelect.selectedIndex = 0;
+                    settleRecipientSelect.selectedIndex = 1;
+                }
+            }
+            
+            if (amountToFill) {
+                settleAmountInput.value = parseFloat(amountToFill).toFixed(2);
+            } else {
+                settleAmountInput.value = '';
+            }
+            
+            settleDateInput.valueAsDate = new Date();
+            closeModal('summary-modal');
+            settleModal.classList.add('active');
+        }
+
+        function openSummaryModal(groupId) {
+            const group = groups.find(g => g.id === groupId);
+            const groupFriends = friends.filter(f => f.groupId === groupId);
+            
+            if(!group || groupFriends.length === 0) return;
+            
+            summaryTitle.innerText = `${group.name} Summary`;
+            const transactions = simplifyDebts(groupFriends);
+            
+            if (transactions.length === 0) {
+                summaryList.innerHTML = '<div class="empty-state">Everyone is settled up!</div>';
+            } else {
+                summaryList.innerHTML = transactions.map(t => `
+                    <div class="debt-line">
+                        <div class="debt-part">
+                            <div class="user-avatar" style="width:24px;height:24px;font-size:0.8rem;">
+                                ${t.from.charAt(0).toUpperCase()}
+                            </div>
+                            ${t.from}
+                        </div>
+                        <div class="debt-arrow">
+                             <span>pays <span class="debt-amount">$${t.amount.toFixed(2)}</span> to</span>
+                             <button class="btn-settle-small" onclick="openSettleModal(${groupId}, ${t.fromId}, ${t.toId}, ${t.amount})">Settle</button>
+                        </div>
+                        <div class="debt-part">
+                            <div class="user-avatar" style="width:24px;height:24px;font-size:0.8rem;">
+                                ${t.to.charAt(0).toUpperCase()}
+                            </div>
+                            ${t.to}
+                        </div>
+                    </div>
+                `).join('');
+            }
+            summaryModal.classList.add('active');
+        }
+        
+        // --- Import / Export Logic ---
+        function openSettingsModal() {
+            settingsModal.classList.add('active');
+        }
+        
+        function exportData() {
+            const data = {
+                groups: groups,
+                friends: friends,
+                activities: activities
+            };
+            
+            const dataStr = JSON.stringify(data, null, 2);
+            const blob = new Blob([dataStr], { type: "application/json" });
+            const url = URL.createObjectURL(blob);
+            
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `fairshare_data_${new Date().toISOString().split('T')[0]}.json`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+        
+        function importData(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    
+                    // Basic validation
+                    if (data.groups && data.friends && data.activities) {
+                        if(confirm("This will overwrite your current data. Are you sure?")) {
+                            groups = data.groups;
+                            friends = data.friends;
+                            activities = data.activities;
+                            saveData();
+                            closeModal('settings-modal');
+                            alert("Data imported successfully!");
+                        }
+                    } else {
+                        alert("Invalid file format.");
+                    }
+                } catch (error) {
+                    alert("Error parsing file.");
+                    console.error(error);
+                }
+                // Reset input
+                event.target.value = '';
+            };
+            reader.readAsText(file);
+        }
+
+        function openResetModal() {
+            resetModal.classList.add('active');
+        }
+
+        function executeReset() {
+            localStorage.clear();
+            location.reload();
+        }
+        
+        // RECALCULATE LOGIC: Single Source of Truth
+        function recalculateAllBalances() {
+            // 1. Reset everyone to 0
+            friends.forEach(f => f.balance = 0);
+            
+            // 2. Replay History
+            activities.forEach(act => {
+                const amount = parseFloat(act.amount) || 0;
+                const activityGroupId = act.groupId; // Get context
+                
+                if (act.type === 'expense') {
+                    // Robust check: Ensure arrays exist before iterating
+                    if (Array.isArray(act.payers)) {
+                        act.payers.forEach(p => {
+                            const f = friends.find(friend => friend.id == p.id);
+                            // Enforce Group Isolation
+                            if(f && f.groupId === activityGroupId) {
+                                f.balance += parseFloat(p.amount);
+                            }
+                        });
+                    }
+                    
+                    if (Array.isArray(act.consumers)) {
+                        act.consumers.forEach(c => {
+                            const f = friends.find(friend => friend.id == c.id);
+                            // Enforce Group Isolation
+                            if(f && f.groupId === activityGroupId) {
+                                f.balance -= parseFloat(c.amount);
+                            }
+                        });
+                    }
+                } else if (act.type === 'settlement') {
+                    let payer, recipient;
+                    
+                    // Robust ID check
+                    if (act.payerId && act.recipientId) {
+                         payer = friends.find(f => f.id == act.payerId);
+                         recipient = friends.find(f => f.id == act.recipientId);
+                    } 
+                    // Fallback to Name matching (Legacy support)
+                    else {
+                         const groupFriends = friends.filter(f => f.groupId === act.groupId);
+                         payer = groupFriends.find(f => f.name === act.payerName);
+                         recipient = groupFriends.find(f => f.name === act.recipientName);
+                    }
+
+                    // Enforce Group Isolation
+                    if (payer && payer.groupId === activityGroupId) {
+                        payer.balance += amount;
+                    }
+                    if (recipient && recipient.groupId === activityGroupId) {
+                        recipient.balance -= amount;
+                    }
+                }
+            });
+        }
+
+        function calculateTotals() {
+            let totalPositive = 0;
+            let totalNegative = 0;
+            let totalSettled = 0;
+
+            const friendsToSum = expandedGroupId 
+                ? friends.filter(f => f.groupId === expandedGroupId)
+                : friends;
+
+            friendsToSum.forEach(f => {
+                if (f.balance > 0) totalPositive += f.balance;
+                if (f.balance < 0) totalNegative += Math.abs(f.balance);
+            });
+            
+            const actsToSum = expandedGroupId 
+                ? activities.filter(a => a.groupId === expandedGroupId)
+                : activities;
+                
+            actsToSum.forEach(a => {
+                if (a.type === 'settlement') {
+                    totalSettled += parseFloat(a.amount) || 0;
+                }
+            });
+
+            totalOwedEl.innerText = `$${totalPositive.toFixed(2)}`;
+            totalOweEl.innerText = `$${totalNegative.toFixed(2)}`;
+            
+            const totalSettledEl = document.getElementById('total-settled');
+            if(totalSettledEl) {
+                 totalSettledEl.innerText = `$${totalSettled.toFixed(2)}`;
+            }
+        }
+        
+        function toggleGroup(groupId) {
+            if (expandedGroupId === groupId) {
+                expandedGroupId = null;
+            } else {
+                expandedGroupId = groupId;
+            }
+            render();
+        }
+
+        function renderFriends() {
+            friendsListEl.innerHTML = '';
+
+            if (groups.length === 0) {
+                friendsListEl.innerHTML = '<div class="empty-state">No groups yet. Create one!</div>';
+                return;
+            }
+
+            groups.forEach(group => {
+                const groupFriends = friends.filter(f => f.groupId === group.id);
+                const isExpanded = group.id === expandedGroupId;
+                
+                // Wrapper for accordion logic
+                const groupBlock = document.createElement('div');
+                groupBlock.className = `group-block ${isExpanded ? 'expanded' : ''}`;
+                
+                // Header
+                const header = document.createElement('div');
+                header.className = 'group-header';
+                header.onclick = () => toggleGroup(group.id);
+                
+                // Left side: Chevron + Title
+                const leftDiv = document.createElement('div');
+                leftDiv.className = 'group-header-left';
+                leftDiv.innerHTML = `
+                    <span class="group-chevron">›</span>
+                    <span>${group.name}</span>
+                `;
+                
+                // Right side: Actions
+                const actionDiv = document.createElement('div');
+                actionDiv.className = 'group-actions';
+
+                // Settle Up Button
+                const settleBtn = document.createElement('button');
+                settleBtn.className = 'btn-icon-group settle'; // Added class
+                settleBtn.innerHTML = '🤝'; 
+                settleBtn.title = 'Settle Up';
+                settleBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    openSettleModal(group.id);
+                });
+
+                // Breakdown Button
+                const breakdownBtn = document.createElement('button');
+                breakdownBtn.className = 'btn-icon-group breakdown'; // Added class
+                breakdownBtn.innerHTML = '📄'; 
+                breakdownBtn.title = 'View Expense Breakdown';
+                breakdownBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    openBreakdownModal(group.id);
+                });
+
+                // Summary Button
+                const summaryBtn = document.createElement('button');
+                summaryBtn.className = 'btn-icon-group summary'; // Added class
+                summaryBtn.innerHTML = '📊'; 
+                summaryBtn.title = 'View Debts Summary';
+                summaryBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    openSummaryModal(group.id);
+                });
+
+                // Export Button (New)
+                const exportBtn = document.createElement('button');
+                exportBtn.className = 'btn-icon-group export'; // Added class
+                exportBtn.innerHTML = '📤'; 
+                exportBtn.title = 'Export as HTML Report';
+                exportBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    exportGroupHTML(group.id);
+                });
+
+                // Delete Button
+                const deleteBtn = document.createElement('button');
+                deleteBtn.className = 'btn-icon-group delete'; // Added class
+                deleteBtn.innerHTML = '&times;';
+                deleteBtn.title = 'Delete Group';
+                deleteBtn.addEventListener('click', (e) => {
+                    e.stopPropagation(); 
+                    initiateDeleteGroup(group.id);
+                });
+
+                actionDiv.appendChild(settleBtn);
+                actionDiv.appendChild(breakdownBtn);
+                actionDiv.appendChild(summaryBtn);
+                actionDiv.appendChild(exportBtn);
+                actionDiv.appendChild(deleteBtn);
+
+                header.appendChild(leftDiv);
+                header.appendChild(actionDiv);
+                
+                // Content (Friends List)
+                const content = document.createElement('div');
+                content.className = 'group-content';
+
+                if (groupFriends.length === 0) {
+                    const emptyItem = document.createElement('div');
+                    emptyItem.className = 'list-item';
+                    emptyItem.style.color = 'var(--text-light)';
+                    emptyItem.style.justifyContent = 'center';
+                    emptyItem.style.fontStyle = 'italic';
+                    emptyItem.innerText = 'No friends in this group yet';
+                    content.appendChild(emptyItem);
+                } else {
+                    groupFriends.forEach(f => {
+                        let balanceText = '';
+                        let balanceClass = 'text-gray';
+                        let statusLabel = 'settled up';
+
+                        if (f.balance > 0.01) {
+                            balanceText = `$${f.balance.toFixed(2)}`;
+                            balanceClass = 'text-green';
+                            statusLabel = 'gets back';
+                        } else if (f.balance < -0.01) {
+                            balanceText = `$${Math.abs(f.balance).toFixed(2)}`;
+                            balanceClass = 'text-red';
+                            statusLabel = 'owes';
+                        }
+
+                        const item = document.createElement('div');
+                        item.className = 'list-item';
+                        item.innerHTML = `
+                            <div class="item-left">
+                                <div class="user-avatar">
+                                    ${f.name.charAt(0).toUpperCase()}
+                                </div>
+                                <div class="item-details">
+                                    <h3>${f.name}</h3>
+                                </div>
+                            </div>
+                            <div style="display:flex; align-items:center;">
+                                <div class="item-right">
+                                    <span class="status">${statusLabel}</span>
+                                    <span class="value ${balanceClass}">${balanceText}</span>
+                                </div>
+                                <button class="btn-delete-friend" onclick="initiateDeleteFriend(${f.id})" title="Remove ${f.name}">&times;</button>
+                            </div>
+                        `;
+                        content.appendChild(item);
+                    });
+                }
+                
+                groupBlock.appendChild(header);
+                groupBlock.appendChild(content);
+                friendsListEl.appendChild(groupBlock);
+            });
+
+            updateDropdowns();
+        }
+        
+        // --- Breakdown Logic (New) ---
+        function openBreakdownModal(groupId) {
+            const group = groups.find(g => g.id === groupId);
+            const groupFriends = friends.filter(f => f.groupId === groupId);
+            const groupActivities = activities.filter(a => a.groupId === groupId && a.type !== 'settlement'); 
+            
+            if(!group || groupFriends.length === 0) return;
+            
+            breakdownTitle.innerText = `${group.name} Breakdown`;
+            
+            // Aggregate expenses by user
+            const userExpenses = {};
+            groupFriends.forEach(f => {
+                userExpenses[f.id] = {
+                    name: f.name,
+                    avatar: f.avatar,
+                    paidItems: [],
+                    paidTotal: 0,
+                    sharedItems: [],
+                    sharedTotal: 0
+                };
+            });
+
+            groupActivities.forEach(act => {
+                // 1. Track Payments
+                if(act.payers) {
+                    act.payers.forEach(p => {
+                        if(userExpenses[p.id]) {
+                            userExpenses[p.id].paidItems.push({
+                                desc: act.desc,
+                                amount: p.amount,
+                                date: act.date
+                            });
+                            userExpenses[p.id].paidTotal += p.amount;
+                        }
+                    });
+                }
+                
+                // 2. Track Participation (Split against)
+                if(act.consumers) {
+                    act.consumers.forEach(c => {
+                        if(userExpenses[c.id]) {
+                            userExpenses[c.id].sharedItems.push({
+                                desc: act.desc,
+                                amount: c.amount,
+                                date: act.date
+                            });
+                            userExpenses[c.id].sharedTotal += c.amount;
+                        }
+                    });
+                }
+            });
+
+            let html = '';
+            groupFriends.forEach(f => {
+                const data = userExpenses[f.id];
+                if(!data) return;
+                
+                // Sort items by date desc
+                data.paidItems.sort((a,b) => new Date(b.date) - new Date(a.date));
+                data.sharedItems.sort((a,b) => new Date(b.date) - new Date(a.date));
+
+                const paidHtml = data.paidItems.length > 0 
+                    ? data.paidItems.map(item => `
+                        <div class="breakdown-item">
+                            <div>
+                                <span class="date">${new Date(item.date).toLocaleDateString(undefined, {month:'short', day:'numeric'})}</span>
+                                ${item.desc}
+                            </div>
+                            <div style="font-weight:600;">$${item.amount.toFixed(2)}</div>
+                        </div>
+                      `).join('')
+                    : '<div class="breakdown-item" style="justify-content:center; font-style:italic; color:var(--text-light);">No expenses paid</div>';
+
+                const splitHtml = data.sharedItems.length > 0 
+                    ? data.sharedItems.map(item => `
+                        <div class="breakdown-item">
+                            <div>
+                                <span class="date">${new Date(item.date).toLocaleDateString(undefined, {month:'short', day:'numeric'})}</span>
+                                ${item.desc}
+                            </div>
+                            <div>$${item.amount.toFixed(2)}</div>
+                        </div>
+                      `).join('')
+                    : '<div class="breakdown-item" style="justify-content:center; font-style:italic; color:var(--text-light);">No expenses shared</div>';
+
+                // Net Balance for Display
+                const net = data.paidTotal - data.sharedTotal;
+                const netClass = net >= 0 ? 'text-green' : 'text-red';
+                const netLabel = net >= 0 ? 'Gets back' : 'Owes';
+
+                html += `
+                    <div class="breakdown-section">
+                        <div class="breakdown-user">
+                            <div style="display:flex; align-items:center; gap:8px;">
+                                <div class="user-avatar" style="width:28px;height:28px;font-size:0.9rem;">
+                                    ${data.name.charAt(0).toUpperCase()}
+                                </div>
+                                <span>${data.name}</span>
+                            </div>
+                            <div class="${netClass}" style="font-size:0.9rem;">
+                                ${netLabel} $${Math.abs(net).toFixed(2)}
+                            </div>
+                        </div>
+                        <div class="breakdown-columns">
+                            <div class="breakdown-col">
+                                <div class="breakdown-col-header paid">
+                                    <span>Paid</span>
+                                    <span>$${data.paidTotal.toFixed(2)}</span>
+                                </div>
+                                <div>${paidHtml}</div>
+                            </div>
+                            <div class="breakdown-col">
+                                <div class="breakdown-col-header split">
+                                    <span>Shared</span>
+                                    <span>$${data.sharedTotal.toFixed(2)}</span>
+                                </div>
+                                <div>${splitHtml}</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            breakdownList.innerHTML = html;
+            breakdownModal.classList.add('active');
+        }
+
+        // --- Deletion Logic (Consolidated) ---
+        
+        function initiateDeleteGroup(id) {
+            groupToDeleteId = id;
+            const groupFriends = friends.filter(f => f.groupId === id);
+            const hasBalance = groupFriends.some(f => Math.abs(f.balance) > 0.01);
+            
+            confirmTitle.innerText = "Delete Group";
+            confirmMessage.innerText = "Are you sure you want to delete this group and all its members?";
+            
+            if (hasBalance) {
+                confirmWarning.style.display = 'block';
+                confirmWarning.innerText = "WARNING: Some members have unpaid balances! Deleting this will remove those debts.";
+            } else {
+                confirmWarning.style.display = 'none';
+            }
+            
+            btnConfirmAction.onclick = executeDeleteGroup;
+            btnConfirmAction.innerText = "Delete Group";
+            
+            confirmModal.classList.add('active');
+        }
+
+        function executeDeleteGroup() {
+            if (groupToDeleteId === null) return;
+            
+            if(expandedGroupId === groupToDeleteId) expandedGroupId = null;
+            
+            groups = groups.filter(g => g.id !== groupToDeleteId);
+            friends = friends.filter(f => f.groupId !== groupToDeleteId);
+            // Also cleanup activities for this group
+            activities = activities.filter(a => a.groupId !== groupToDeleteId);
+            
+            saveData();
+            closeModal('confirm-modal');
+            groupToDeleteId = null;
+        }
+        
+        // New: Friend Deletion
+        function initiateDeleteFriend(id) {
+            friendToDeleteId = id;
+            const friend = friends.find(f => f.id === id);
+            if(!friend) return;
+
+            confirmTitle.innerText = "Remove Member";
+            confirmMessage.innerText = `Are you sure you want to remove ${friend.name} from the group?`;
+            
+            if (Math.abs(friend.balance) > 0.01) {
+                confirmWarning.style.display = 'block';
+                confirmWarning.innerText = `WARNING: ${friend.name} has a balance of $${friend.balance.toFixed(2)}. Removing them will delete this balance record.`;
+            } else {
+                confirmWarning.style.display = 'none';
+            }
+            
+            btnConfirmAction.onclick = executeDeleteFriend;
+            btnConfirmAction.innerText = "Remove Member";
+            
+            confirmModal.classList.add('active');
+        }
+
+        function executeDeleteFriend() {
+            if (friendToDeleteId === null) return;
+
+            // Remove friend
+            friends = friends.filter(f => f.id !== friendToDeleteId);
+            
+            // Note: We do NOT delete historical activities involving this friend
+            // so the total group history remains intact. 
+            // However, recalculateBalances will gracefully skip this friend ID
+            // effectively removing their current balance from the view.
+
+            saveData();
+            closeModal('confirm-modal');
+            friendToDeleteId = null;
+        }
+        
+        function initiateDeleteActivity(id) {
+            activityToDeleteId = id;
+            const act = activities.find(a => a.id === id);
+            
+            if(!act) return;
+
+            confirmTitle.innerText = "Delete Expense";
+            confirmMessage.innerText = `Are you sure you want to delete "${act.desc || 'this item'}"? This will reverse the balances.`;
+            confirmWarning.style.display = 'none';
+            
+            btnConfirmAction.onclick = executeDeleteActivity;
+            btnConfirmAction.innerText = "Delete Expense";
+            
+            confirmModal.classList.add('active');
+        }
+
+        function executeDeleteActivity() {
+            if (activityToDeleteId === null) return;
+
+            // Simply remove it. Recalculate() on render will handle the balance updates.
+            activities = activities.filter(a => a.id !== activityToDeleteId);
+
+            saveData();
+            closeModal('confirm-modal');
+            activityToDeleteId = null;
+        }
+
+        function updateDropdowns() {
+            if(expenseGroupSelect) {
+                const currentVal = expenseGroupSelect.value;
+                expenseGroupSelect.innerHTML = groups.map(g => 
+                    `<option value="${g.id}">${g.name}</option>`
+                ).join('');
+                
+                // FIX: Ensure a value is always selected to prevent blank lists
+                if (currentVal && groups.some(g => g.id == currentVal)) {
+                    expenseGroupSelect.value = currentVal;
+                } else if (groups.length > 0) {
+                    expenseGroupSelect.value = groups[0].id;
+                }
+            }
+            if(groupSelectAssign) {
+                groupSelectAssign.innerHTML = groups.map(g => 
+                    `<option value="${g.id}">${g.name}</option>`
+                ).join('');
+            }
+        }
+
+        // --- New Expense Logic ---
+
+        function setSplitMethod(method) {
+            if (method === 'equal' && currentSplitMethod === 'equal') {
+                toggleSelectAll();
+                return;
+            }
+            
+            currentSplitMethod = method;
+            document.querySelectorAll('.split-tab').forEach(tab => tab.classList.remove('active'));
+            document.getElementById(`tab-${method}`).classList.add('active');
+            updateExpenseParticipants(); 
+        }
+        
+        function toggleSelectAll() {
+            const checkboxes = splitContainer.querySelectorAll('input[type="checkbox"]');
+            if (checkboxes.length === 0) return;
+
+            const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+            const newState = !allChecked;
+            
+            checkboxes.forEach(cb => {
+                cb.checked = newState;
+                const chip = cb.closest('.chip');
+                if(newState) {
+                    chip.classList.add('selected');
+                } else {
+                    chip.classList.remove('selected');
+                }
+            });
+            updateSplitSummary();
+        }
+
+        function updateExpenseParticipants() {
+            const groupId = parseInt(expenseGroupSelect.value);
+            if(!groupId) return;
+
+            const groupFriends = friends.filter(f => f.groupId === groupId);
+            
+            let payerHtml = ``;
+            groupFriends.forEach(f => {
+                payerHtml += `<option value="${f.id}">${f.name}</option>`;
+            });
+            payerHtml += `<option value="multiple">Multiple people</option>`;
+            
+            const currentPayerVal = payerSelect.value;
+            payerSelect.innerHTML = payerHtml;
+            
+            if(currentPayerVal && currentPayerVal !== 'you' && (currentPayerVal === 'multiple' || groupFriends.some(f => f.id == currentPayerVal))) {
+                 payerSelect.value = currentPayerVal;
+            } else if (groupFriends.length > 0) {
+                 payerSelect.value = groupFriends[0].id;
+            }
+
+            generateMultiPayerInputs(groupFriends);
+            handlePayerChange(); 
+
+            let splitHtml = '';
+            const createChip = (id, name, avatar) => {
+                const avatarEl = `<div class="chip-avatar">${name.charAt(0).toUpperCase()}</div>`;
+
+                if (currentSplitMethod === 'equal') {
+                    return `
+                    <div class="chip selectable selected" data-id="${id}" onclick="toggleChip(this)">
+                        <div class="chip-left">
+                            ${avatarEl}
+                            <span>${name}</span>
+                        </div>
+                        <input type="checkbox" value="${id}" checked>
+                        <div class="chip-right"></div>
+                    </div>`;
+                } else if (currentSplitMethod === 'shares') {
+                    return `
+                    <div class="chip input-mode" data-id="${id}">
+                        <div class="chip-left">
+                            ${avatarEl}
+                            <span>${name}</span>
+                        </div>
+                        <div class="chip-right">
+                             <input type="number" class="split-input-val" data-id="${id}" value="1" min="0" step="1">
+                             <span class="split-input-label">share(s)</span>
+                        </div>
+                    </div>`;
+                } else if (currentSplitMethod === 'percent') {
+                    return `
+                    <div class="chip input-mode" data-id="${id}">
+                        <div class="chip-left">
+                            ${avatarEl}
+                            <span>${name}</span>
+                        </div>
+                        <div class="chip-right">
+                             <input type="number" class="split-input-val" data-id="${id}" value="0" min="0" max="100" step="0.1">
+                             <span class="split-input-label">%</span>
+                        </div>
+                    </div>`;
+                }
+            };
+
+            groupFriends.forEach(f => {
+                splitHtml += createChip(f.id, f.name, f.avatar);
+            });
+            
+            splitContainer.innerHTML = splitHtml;
+            updateSplitSummary();
+        }
+
+        function generateMultiPayerInputs(groupFriends) {
+            let multiHtml = ``; 
+            groupFriends.forEach(f => {
+                multiHtml += `
+                    <div class="multi-payer-item">
+                        <div class="multi-payer-label">${f.name}</div>
+                        <input type="number" class="multi-payer-input" data-id="${f.id}" placeholder="0.00" min="0" step="0.01" oninput="updateRemainingBalance()">
+                    </div>
+                `;
+            });
+            multiHtml += `<div id="multi-payer-remaining-display" class="multi-payer-remaining">Remaining: $0.00</div>`;
+            multiPayerContainer.innerHTML = multiHtml;
+        }
+
+        function updateRemainingBalance() {
+            const totalAmount = parseFloat(document.getElementById('amount-input').value) || 0;
+            const inputs = multiPayerContainer.querySelectorAll('.multi-payer-input');
+            let enteredTotal = 0;
+            
+            inputs.forEach(inp => {
+                const val = parseFloat(inp.value);
+                if (!isNaN(val)) enteredTotal += val;
+            });
+
+            const remaining = totalAmount - enteredTotal;
+            const remainingEl = document.getElementById('multi-payer-remaining-display');
+            
+            if(remainingEl) {
+                if (Math.abs(remaining) < 0.01) {
+                    remainingEl.innerText = "Total matches";
+                    remainingEl.className = "multi-payer-remaining success";
+                } else if (remaining > 0) {
+                    remainingEl.innerText = `Remaining: $${remaining.toFixed(2)}`;
+                    remainingEl.className = "multi-payer-remaining";
+                } else {
+                    remainingEl.innerText = `Over by: $${Math.abs(remaining).toFixed(2)}`;
+                    remainingEl.className = "multi-payer-remaining error";
+                }
+            }
+        }
+
+        function updateSplitSummary() {
+            if (currentSplitMethod === 'equal') {
+                const count = splitContainer.querySelectorAll('input[type="checkbox"]:checked').length;
+                splitSummary.innerText = `Split equally between ${count} people`;
+            } else if (currentSplitMethod === 'shares') {
+                splitSummary.innerText = `Split by number of shares`;
+            } else {
+                splitSummary.innerText = `Split by percentage (Total must be 100%)`;
+            }
+        }
+
+        function toggleChip(element) {
+            element.classList.toggle('selected');
+            const checkbox = element.querySelector('input');
+            checkbox.checked = element.classList.contains('selected');
+            updateSplitSummary();
+        };
+
+        function handlePayerChange() {
+            const isMultiple = payerSelect.value === 'multiple';
+            const amountInput = document.getElementById('amount-input');
+            
+            if (isMultiple) {
+                multiPayerContainer.style.display = 'block';
+                updateRemainingBalance();
+            } else {
+                multiPayerContainer.style.display = 'none';
+                amountInput.readOnly = false;
+            }
+        }
+
+        function updateTotalFromMulti() {
+            const inputs = multiPayerContainer.querySelectorAll('.multi-payer-input');
+            let total = 0;
+            inputs.forEach(inp => {
+                const val = parseFloat(inp.value);
+                if (!isNaN(val)) total += val;
+            });
+            document.getElementById('amount-input').value = total > 0 ? total : '';
+        }
+
+        function renderActivity() {
+            let displayActivities = activities;
+            
+            if (expandedGroupId !== null) {
+                displayActivities = activities.filter(a => a.groupId === expandedGroupId);
+                const groupName = groups.find(g => g.id === expandedGroupId)?.name || "Group";
+                activityHeader.innerText = `Recent Activity (${groupName})`;
+            } else {
+                activityHeader.innerText = "All Recent Activity";
+            }
+            
+            if (displayActivities.length === 0) {
+                const msg = expandedGroupId ? "No expenses recorded for this group." : "No recent activity.";
+                activityListEl.innerHTML = `<div class="empty-state">${msg}</div>`;
+                return;
+            }
+            
+            const sortedActs = [...displayActivities].reverse();
+            activityListEl.innerHTML = sortedActs.map(act => {
+                const dateObj = new Date(act.date);
+                const dateStr = isNaN(dateObj.getTime()) ? act.date : dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                const actAmount = parseFloat(act.amount) || 0;
+
+                if (act.type === 'settlement') {
+                     return `
+                    <div class="list-item settlement">
+                        <div class="item-left">
+                            <div class="icon-box">🤝</div>
+                            <div class="item-details">
+                                <h3>${act.payerName} paid ${act.recipientName}</h3>
+                                <p>Settlement</p>
+                            </div>
+                        </div>
+                        <div class="item-right">
+                            <span class="status">${dateStr}</span>
+                            <span class="value text-green">$${actAmount.toFixed(2)}</span>
+                        </div>
+                        <button class="btn-edit-activity" onclick="initiateDeleteActivity(${act.id})" title="Delete" style="margin-left:4px; color:var(--danger); border-color:var(--border);">🗑</button>
+                    </div>
+                    `;
+                }
+
+                const isMultiplePayers = Array.isArray(act.payers) && act.payers.length > 1;
+                let subtitle = '';
+                if (isMultiplePayers) {
+                    subtitle = `Multiple people paid $${actAmount.toFixed(2)}`;
+                } else {
+                    subtitle = `${act.payerName} paid $${actAmount.toFixed(2)}`;
+                }
+                
+                let sharedByText = "Group";
+                if (Array.isArray(act.consumers) && act.consumers.length > 0) {
+                    const totalGroupMembers = friends.filter(f => f.groupId === act.groupId).length;
+                    const names = act.consumers.map(c => {
+                        const f = friends.find(friend => friend.id == c.id);
+                        return f ? f.name.split(' ')[0] : 'Unknown';
+                    });
+                    
+                    if (names.length === totalGroupMembers && totalGroupMembers > 0) {
+                        sharedByText = "Everyone";
+                    } else if (names.length === 1) {
+                        sharedByText = names[0];
+                    } else if (names.length === 2) {
+                        sharedByText = names.join(' & ');
+                    } else {
+                        sharedByText = `${names[0]}, ${names[1]} +${names.length - 2}`;
+                    }
+                }
+
+                let rightSideHtml = `
+                    <div style="display:flex; align-items:center;">
+                        <div style="text-align:right; margin-right:12px;">
+                             <span class="status">${dateStr}</span>
+                             <span class="value text-gray" style="font-size:0.85rem; font-weight:600; color:var(--text-light);" title="${sharedByText}">${sharedByText}</span>
+                        </div>
+                        <button class="btn-edit-activity" onclick="openEditModal(${act.id})" title="Edit">✎</button>
+                        <button class="btn-edit-activity" onclick="initiateDeleteActivity(${act.id})" title="Delete" style="margin-left:4px; color:var(--danger); border-color:var(--border);">🗑</button>
+                    </div>
+                `;
+                
+                return `
+                <div class="list-item ${act.type === 'settlement' ? 'settlement' : ''}">
+                    <div class="item-left">
+                        <div class="icon-box">${act.type === 'settlement' ? '🤝' : '🧾'}</div>
+                        <div class="item-details">
+                            <h3>${act.desc || (act.payerName + ' paid ' + act.recipientName)}</h3>
+                            <p>${act.type === 'settlement' ? 'Settlement' : subtitle}</p>
+                        </div>
+                    </div>
+                    <div class="item-right">
+                        ${rightSideHtml}
+                    </div>
+                </div>
+                `;
+            }).join('');
+        }
+
+        function render() {
+            try {
+                recalculateAllBalances(); // ALWAYS recalculate from scratch
+                calculateTotals();
+                renderFriends();
+                renderActivity();
+            } catch (e) {
+                console.error("Render error:", e);
+                // Fallback if data is severely corrupted
+                if(confirm("Data appears corrupted. Reset to demo defaults?")) {
+                    executeReset();
+                }
+            }
+        }
+
+        // --- Modal Management ---
+
+        function openExpenseModal() {
+            if (friends.length === 0) {
+                alertModal.classList.add('active');
+                return;
+            }
+            editingActivityId = null;
+            expenseModalTitle.innerText = "Add expense";
+            btnSaveExpense.innerText = "Save Expense";
+            expenseGroupSelect.disabled = false;
+            
+            expenseModal.classList.add('active');
+            
+            updateDropdowns();
+            
+            if (expandedGroupId) {
+                 expenseGroupSelect.value = expandedGroupId;
+            }
+            
+            // FIX: Reset currentSplitMethod to null so setSplitMethod('equal') 
+            // triggers a full render (instead of being seen as a toggle)
+            currentSplitMethod = null; 
+            setSplitMethod('equal');
+            
+            // Default Date to Today
+            dateInput.valueAsDate = new Date();
+            
+            document.getElementById('desc-input').focus();
+        }
+        
+        function openEditModal(actId) {
+            const act = activities.find(a => a.id === actId);
+            if(!act) return;
+            
+            if(!act.payers || !act.consumers) {
+                alert("Cannot edit this older expense record.");
+                return;
+            }
+
+            editingActivityId = actId;
+            expenseModalTitle.innerText = "Edit expense";
+            btnSaveExpense.innerText = "Update Expense";
+            
+            expenseModal.classList.add('active');
+            
+            updateDropdowns();
+            expenseGroupSelect.value = act.groupId;
+            expenseGroupSelect.disabled = true; 
+            
+            document.getElementById('desc-input').value = act.desc;
+            document.getElementById('amount-input').value = act.amount;
+            dateInput.value = act.date;
+            
+            // FIX: Reset method before setting to ensure UI refreshes
+            currentSplitMethod = null;
+            setSplitMethod(act.splitMethod || 'equal'); 
+            
+            if(act.payers.length > 1) {
+                payerSelect.value = 'multiple';
+                handlePayerChange();
+                setTimeout(() => {
+                    act.payers.forEach(p => {
+                        const inp = multiPayerContainer.querySelector(`input[data-id="${p.id}"]`);
+                        if(inp) inp.value = p.amount;
+                    });
+                    updateRemainingBalance();
+                }, 0);
+            } else {
+                // Ensure the value exists in the dropdown before setting it
+                if (act.payers.length > 0) {
+                    const payerId = act.payers[0].id;
+                    // Small timeout to ensure DOM is ready if needed, 
+                    // though setSplitMethod is synchronous.
+                    payerSelect.value = payerId;
+                }
+                handlePayerChange();
+            }
+            
+            // RESTORE SPLIT VALUES
+            setTimeout(() => {
+                if(act.splitMethod === 'equal') {
+                    // Deselect all first
+                    splitContainer.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+                        cb.checked = false;
+                        cb.closest('.chip').classList.remove('selected');
+                    });
+                    // Select active ones
+                    act.consumers.forEach(c => {
+                        const cb = splitContainer.querySelector(`input[value="${c.id}"]`);
+                        if(cb) {
+                            cb.checked = true;
+                            cb.closest('.chip').classList.add('selected');
+                        }
+                    });
+                } else if (act.splitMethod === 'shares') {
+                     act.consumers.forEach(c => {
+                         const inp = splitContainer.querySelector(`input[data-id="${c.id}"]`);
+                         // If 'shares' is stored, use it. Otherwise default to 1 (or infer if possible, but 1 is safer for older data)
+                         if(inp && c.shares) inp.value = c.shares;
+                     });
+                } else if (act.splitMethod === 'percent') {
+                    act.consumers.forEach(c => {
+                         const inp = splitContainer.querySelector(`input[data-id="${c.id}"]`);
+                         // Use stored percentage if available, else calculate from amount
+                         if(inp) {
+                             if (c.pct) {
+                                 inp.value = c.pct;
+                             } else {
+                                 const pct = (c.amount / act.amount) * 100;
+                                 inp.value = pct.toFixed(1);
+                             }
+                         }
+                    });
+                }
+                updateSplitSummary();
+            }, 50);
+        }
+        
+        function openFriendModal() {
+            if (groups.length === 0) {
+                alertModal.classList.add('active');
+                return;
+            }
+            if (groups.length > 0) {
+                const lastGroup = groups[groups.length - 1];
+                if (groupSelectAssign) {
+                    groupSelectAssign.value = lastGroup.id;
+                }
+            }
+            friendModal.classList.add('active');
+        }
+
+        // --- Export HTML Report (New) ---
+        function exportGroupHTML(groupId) {
+            const group = groups.find(g => g.id === groupId);
+            if (!group) return;
+            
+            const groupFriends = friends.filter(f => f.groupId === groupId);
+            const allGroupActivities = activities.filter(a => a.groupId === groupId);
+            // Filter for breakdown (exclude settlements)
+            const expenseActivities = allGroupActivities.filter(a => a.type !== 'settlement');
+            const settlements = simplifyDebts(groupFriends);
+            
+            // --- Calculate Breakdown ---
+            const userExpenses = {};
+            groupFriends.forEach(f => {
+                userExpenses[f.id] = {
+                    name: f.name,
+                    paidItems: [],
+                    paidTotal: 0,
+                    sharedItems: [],
+                    sharedTotal: 0
+                };
+            });
+
+            expenseActivities.forEach(act => {
+                // Track Payments
+                if(act.payers) {
+                    act.payers.forEach(p => {
+                        if(userExpenses[p.id]) {
+                            userExpenses[p.id].paidItems.push({
+                                desc: act.desc,
+                                amount: p.amount,
+                                date: act.date
+                            });
+                            userExpenses[p.id].paidTotal += p.amount;
+                        }
+                    });
+                }
+                // Track Participation
+                if(act.consumers) {
+                    act.consumers.forEach(c => {
+                        if(userExpenses[c.id]) {
+                            userExpenses[c.id].sharedItems.push({
+                                desc: act.desc,
+                                amount: c.amount,
+                                date: act.date
+                            });
+                            userExpenses[c.id].sharedTotal += c.amount;
+                        }
+                    });
+                }
+            });
+
+            // Sort items
+            Object.values(userExpenses).forEach(data => {
+                data.paidItems.sort((a,b) => new Date(b.date) - new Date(a.date));
+                data.sharedItems.sort((a,b) => new Date(b.date) - new Date(a.date));
+            });
+
+            // Generate Breakdown HTML
+            const breakdownHTML = Object.values(userExpenses).map(data => {
+                const net = data.paidTotal - data.sharedTotal;
+                const netColor = net >= 0 ? 'positive' : 'negative';
+                const netText = net >= 0 ? `Gets back $${Math.abs(net).toFixed(2)}` : `Owes $${Math.abs(net).toFixed(2)}`;
+
+                const renderList = (items) => {
+                    if (items.length === 0) return '<div class="empty-list">-</div>';
+                    return items.map(i => `
+                        <div class="list-row">
+                            <span>${i.desc} <span style="color:#999; font-size:0.8em;">(${new Date(i.date).toLocaleDateString()})</span></span>
+                            <span>$${i.amount.toFixed(2)}</span>
+                        </div>
+                    `).join('');
+                };
+
+                return `
+                    <div class="user-block">
+                        <div class="user-header">
+                            <h3>${data.name}</h3>
+                            <span class="amount ${netColor}">${netText}</span>
+                        </div>
+                        <div class="columns">
+                            <div class="column">
+                                <div class="col-title" style="color:#1cc29f;">Paid ($${data.paidTotal.toFixed(2)})</div>
+                                ${renderList(data.paidItems)}
+                            </div>
+                            <div class="column">
+                                <div class="col-title" style="color:#e67e22;">Shared ($${data.sharedTotal.toFixed(2)})</div>
+                                ${renderList(data.sharedItems)}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            
+            // Generate HTML String
+            let html = `
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <meta charset="UTF-8">
+                <title>Expense Report - ${group.name}</title>
+                <style>
+                    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; padding: 40px; max-width: 900px; margin: 0 auto; color: #333; line-height: 1.5; }
+                    h1 { color: #1cc29f; border-bottom: 2px solid #eee; padding-bottom: 15px; margin-bottom: 30px; display: flex; align-items: center; gap: 10px; }
+                    h2 { margin-top: 40px; font-size: 1.4rem; color: #444; margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 8px;}
+                    table { width: 100%; border-collapse: collapse; margin-top: 10px; background: #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.05); border-radius: 8px; overflow: hidden; }
+                    th, td { padding: 12px 16px; text-align: left; border-bottom: 1px solid #eee; }
+                    th { background-color: #f8fcfb; font-weight: 600; color: #555; text-transform: uppercase; font-size: 0.85rem; letter-spacing: 0.5px; }
+                    tr:last-child td { border-bottom: none; }
+                    .amount { font-weight: 700; font-family: monospace; font-size: 1rem; }
+                    .positive { color: #1cc29f; }
+                    .negative { color: #ff6565; }
+                    .settlement-box { background: #f0fdf9; border: 1px solid #1cc29f; padding: 20px; border-radius: 8px; margin-top: 10px; }
+                    .settlement-item { margin-bottom: 8px; font-size: 1.05rem; }
+                    .timestamp { color: #888; font-size: 0.8rem; text-align: right; margin-bottom: -10px; }
+                    .badge { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 0.75rem; font-weight: 600; }
+                    .badge-expense { background: #f0f0f0; color: #555; }
+                    .badge-settle { background: #e8fcf7; color: #1cc29f; }
+
+                    /* Breakdown Styles */
+                    .user-block { margin-bottom: 25px; border: 1px solid #eee; border-radius: 8px; overflow: hidden; }
+                    .user-header { background: #f9f9f9; padding: 10px 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; }
+                    .user-header h3 { margin: 0; font-size: 1.1rem; }
+                    .columns { display: flex; }
+                    .column { flex: 1; padding: 15px; font-size: 0.9rem; }
+                    .column:first-child { border-right: 1px solid #eee; }
+                    .col-title { font-weight: 700; text-transform: uppercase; font-size: 0.8rem; margin-bottom: 10px; }
+                    .list-row { display: flex; justify-content: space-between; margin-bottom: 6px; border-bottom: 1px dashed #f0f0f0; padding-bottom: 4px; }
+                    .empty-list { font-style: italic; color: #aaa; }
+                </style>
+            </head>
+            <body>
+                <div class="timestamp">Generated on ${new Date().toLocaleString()}</div>
+                <h1>${group.name} <span style="color:#aaa; font-weight:300;">Expense Report</span></h1>
+                
+                <h2>👥 Net Balances</h2>
+                <table>
+                    <thead><tr><th>Participant</th><th>Net Balance</th><th>Status</th></tr></thead>
+                    <tbody>
+                        ${groupFriends.map(f => `
+                            <tr>
+                                <td>${f.name}</td>
+                                <td class="${f.balance >= 0 ? 'positive' : 'negative'} amount">
+                                    ${f.balance >= 0 ? '+' : ''}$${f.balance.toFixed(2)}
+                                </td>
+                                <td>${f.balance > 0.01 ? 'Gets back' : (f.balance < -0.01 ? 'Owes' : 'Settled')}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+
+                <h2>🤝 Suggested Settlements</h2>
+                ${settlements.length > 0 ? `
+                    <div class="settlement-box">
+                        ${settlements.map(s => `
+                            <div class="settlement-item">
+                                <strong>${s.from}</strong> pays <strong>${s.to}</strong>
+                                <span style="float:right; font-weight:bold;">$${s.amount.toFixed(2)}</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                ` : '<div style="padding:20px; background:#f9f9f9; border-radius:8px; text-align:center; color:#888;">All settled up! No pending payments.</div>'}
+                
+                <h2>📄 Detailed Breakdown</h2>
+                ${breakdownHTML}
+
+                <h2>🧾 Activity Ledger</h2>
+                <table>
+                    <thead><tr><th>Date</th><th>Description</th><th>Type</th><th>Amount</th><th>Payer</th></tr></thead>
+                    <tbody>
+                        ${allGroupActivities.slice().reverse().map(act => {
+                             const dateStr = new Date(act.date).toLocaleDateString();
+                             const isSettle = act.type === 'settlement';
+                             return `
+                            <tr>
+                                <td>${dateStr}</td>
+                                <td>${act.desc || (isSettle ? 'Payment' : 'Expense')}</td>
+                                <td><span class="badge ${isSettle ? 'badge-settle' : 'badge-expense'}">${isSettle ? 'Settlement' : 'Expense'}</span></td>
+                                <td class="amount">$${act.amount.toFixed(2)}</td>
+                                <td>${act.payerName} ${isSettle ? '&#8594; ' + act.recipientName : ''}</td>
+                            </tr>
+                            `;
+                        }).join('')}
+                    </tbody>
+                </table>
+                
+                <div style="margin-top:50px; text-align:center; color:#aaa; font-size:0.8rem;">
+                    Generated by FairShare
+                </div>
+            </body>
+            </html>
+            `;
+            
+            // Trigger Download
+            const blob = new Blob([html], { type: 'text/html' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${group.name.replace(/[^a-z0-9]/gi, '_')}_Report.html`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        }
+
+        function redirectGroupCreation() {
+            closeModal('alert-modal');
+            openGroupModal();
+        }
+
+        function openGroupModal() {
+            groupModal.classList.add('active');
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.remove('active');
+            if(modalId === 'expense-modal') {
+                expenseForm.reset();
+                multiPayerContainer.style.display = 'none';
+                document.getElementById('amount-input').readOnly = false;
+                editingActivityId = null;
+                expenseGroupSelect.disabled = false;
+            }
+            if(modalId === 'friend-modal') friendForm.reset();
+            if(modalId === 'group-modal') groupForm.reset();
+            if(modalId === 'settle-modal') settleForm.reset();
+        }
+
+        const modals = [expenseModal, friendModal, groupModal, confirmModal, alertModal, resetModal, summaryModal, breakdownModal, settleModal, settingsModal, tipModal];
+        modals.forEach(modal => {
+            if (modal) {
+                modal.addEventListener('click', (e) => {
+                    if (e.target === modal) closeModal(modal.id);
+                });
+            }
+        });
+        
+        // Explicitly expose to window
+        window.openSettleModal = openSettleModal;
+        window.simplifyDebts = simplifyDebts;
+        window.openSummaryModal = openSummaryModal;
+        window.openEditModal = openEditModal;
+        window.initiateDeleteActivity = initiateDeleteActivity;
+        window.openBreakdownModal = openBreakdownModal;
+        window.exportGroupHTML = exportGroupHTML;
+        window.initiateDeleteGroup = initiateDeleteGroup;
+        window.initiateDeleteFriend = initiateDeleteFriend;
+        window.openSettingsModal = openSettingsModal;
+        window.exportData = exportData;
+        window.importData = importData;
+        window.openResetModal = openResetModal;
+        window.openGroupModal = openGroupModal;
+        window.openFriendModal = openFriendModal;
+        window.executeDeleteActivity = executeDeleteActivity;
+        window.executeDeleteFriend = executeDeleteFriend;
+        window.executeDeleteGroup = executeDeleteGroup;
+        window.executeReset = executeReset;
+        window.redirectGroupCreation = redirectGroupCreation;
+        window.closeModal = closeModal;
+        window.updateSettleSuggestion = updateSettleSuggestion;
+        window.updateExpenseParticipants = updateExpenseParticipants;
+        window.handlePayerChange = handlePayerChange;
+        window.updateRemainingBalance = updateRemainingBalance;
+        window.setSplitMethod = setSplitMethod;
+        window.toggleChip = toggleChip;
+        window.updateTotalFromMulti = updateTotalFromMulti;
+        // TIP CALC EXPORTS
+        window.openTipModal = openTipModal;
+        window.setTipPct = setTipPct;
+        window.setCustomTip = setCustomTip;
+        window.adjustSplit = adjustSplit;
+        window.calculateTip = calculateTip;
+
+        // --- Form Submissions ---
+
+        expenseForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const desc = document.getElementById('desc-input').value;
+            const amount = parseFloat(document.getElementById('amount-input').value);
+            const dateVal = dateInput.value || new Date().toISOString().split('T')[0];
+            const groupId = parseInt(expenseGroupSelect.value);
+            
+            // 1. Gather Payers
+            let payers = [];
+            const payerValue = payerSelect.value;
+            
+            if (payerValue === 'multiple') {
+                const inputs = multiPayerContainer.querySelectorAll('.multi-payer-input');
+                inputs.forEach(inp => {
+                    const val = parseFloat(inp.value);
+                    if (!isNaN(val) && val > 0) {
+                        // FIX: Parse ID as integer
+                        payers.push({ id: parseInt(inp.dataset.id), amount: val });
+                    }
+                });
+            } else {
+                // FIX: Parse ID as integer
+                payers.push({ id: parseInt(payerValue), amount: amount });
+            }
+
+            // 2. Gather Split Data (Consumers)
+            let consumers = []; 
+            
+            if (currentSplitMethod === 'equal') {
+                const checkboxes = splitContainer.querySelectorAll('input[type="checkbox"]:checked');
+                const count = checkboxes.length;
+                if (count === 0) { alert("Select at least one person."); return; }
+                
+                const costPerPerson = amount / count;
+                checkboxes.forEach(cb => {
+                    // FIX: Parse ID as integer
+                    consumers.push({ id: parseInt(cb.value), amount: costPerPerson });
+                });
+
+            } else if (currentSplitMethod === 'shares') {
+                const inputs = splitContainer.querySelectorAll('.split-input-val');
+                let totalShares = 0;
+                let tempConsumers = [];
+                
+                inputs.forEach(inp => {
+                    const shares = parseFloat(inp.value) || 0;
+                    if (shares > 0) {
+                        totalShares += shares;
+                        // FIX: Parse ID as integer
+                        tempConsumers.push({ id: parseInt(inp.dataset.id), shares: shares });
+                    }
+                });
+                
+                if (totalShares === 0) { alert("Total shares must be greater than 0."); return; }
+                
+                tempConsumers.forEach(c => {
+                    const cost = (c.shares / totalShares) * amount;
+                    // FIX: Save 'shares' in the consumer object
+                    consumers.push({ id: c.id, amount: cost, shares: c.shares });
+                });
+
+            } else if (currentSplitMethod === 'percent') {
+                const inputs = splitContainer.querySelectorAll('.split-input-val');
+                let totalPercent = 0;
+                let tempConsumers = [];
+                
+                inputs.forEach(inp => {
+                    const pct = parseFloat(inp.value) || 0;
+                    if (pct > 0) {
+                        totalPercent += pct;
+                        // FIX: Parse ID as integer
+                        tempConsumers.push({ id: parseInt(inp.dataset.id), pct: pct });
+                    }
+                });
+
+                if (Math.abs(totalPercent - 100) > 0.1) {
+                    alert(`Total percentage is ${totalPercent}%. It must be 100%.`);
+                    return;
+                }
+                
+                tempConsumers.forEach(c => {
+                    const cost = (c.pct / 100) * amount;
+                    // FIX: Save 'pct' in the consumer object
+                    consumers.push({ id: c.id, amount: cost, pct: c.pct });
+                });
+            }
+
+            // 3. Validation
+            if (!desc || isNaN(amount) || amount <= 0) { alert("Invalid details."); return; }
+            if (payers.length === 0) { alert("Payer info missing."); return; }
+            if (consumers.length === 0) { alert("Consumer info missing."); return; }
+
+            if (payerValue === 'multiple') {
+                const sumPayers = payers.reduce((acc, p) => acc + p.amount, 0);
+                if (Math.abs(sumPayers - amount) > 0.02) {
+                    alert(`Total amount ($${amount}) does not match sum of payers ($${sumPayers}).`);
+                    return;
+                }
+            }
+
+            // 4. Apply Logic - Just Update Array, Recalculate handles math
+            if (editingActivityId) {
+                activities = activities.filter(a => a.id !== editingActivityId);
+            }
+
+            let payerNameDisplay = 'Unknown';
+            if (payers.length > 1) {
+                payerNameDisplay = 'Multiple people';
+            } else {
+                const p = friends.find(f => f.id == payers[0].id);
+                payerNameDisplay = p ? p.name : 'Unknown';
+            }
+
+            const newActivity = {
+                id: editingActivityId || Date.now(),
+                groupId: groupId,
+                desc: desc,
+                amount: amount,
+                date: dateVal,
+                payers: payers,
+                consumers: consumers,
+                payerName: payerNameDisplay,
+                splitMethod: currentSplitMethod,
+                type: 'expense'
+            };
+
+            activities.push(newActivity);
+            activities.sort((a, b) => new Date(b.date) - new Date(a.date));
+            
+            saveData();
+            closeModal('expense-modal');
+        });
+        
+        settleForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const payerId = parseInt(settlePayerSelect.value);
+            const recipientId = parseInt(settleRecipientSelect.value);
+            const amount = parseFloat(settleAmountInput.value);
+            const dateVal = settleDateInput.value;
+            
+            if(payerId === recipientId) {
+                alert("Payer and recipient cannot be the same person.");
+                return;
+            }
+            
+            if(isNaN(amount) || amount <= 0) {
+                alert("Please enter a valid amount.");
+                return;
+            }
+            
+            // Find Friends
+            const payer = friends.find(f => f.id === payerId);
+            const recipient = friends.find(f => f.id === recipientId);
+            
+            if (!payer || !recipient) {
+                alert("Error identifying selected users.");
+                return;
+            }
+            
+            // Create Activity with IDs for robust tracking
+            const newActivity = {
+                id: Date.now(),
+                groupId: payer.groupId,
+                desc: 'Settlement',
+                amount: amount,
+                date: dateVal,
+                type: 'settlement',
+                payerName: payer.name,
+                recipientName: recipient.name,
+                payerId: payer.id,      // Saving ID is crucial
+                recipientId: recipient.id // Saving ID is crucial
+            };
+            
+            activities.push(newActivity);
+            activities.sort((a, b) => new Date(b.date) - new Date(a.date));
+            
+            saveData();
+            closeModal('settle-modal');
+        });
+
+        // 2. Add Friend
+        friendForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const name = document.getElementById('friend-name-input').value;
+            const groupId = parseInt(document.getElementById('group-select-assign').value);
+            if (!name) return;
+            const newFriend = {
+                id: Date.now(),
+                name: name,
+                groupId: groupId,
+                avatar: name, 
+                balance: 0
+            };
+            friends.push(newFriend);
+            saveData();
+            closeModal('friend-modal');
+        });
+
+        // 3. Add Group
+        groupForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const name = document.getElementById('group-name-input').value;
+            if (!name) return;
+            const newGroup = {
+                id: Date.now(),
+                name: name
+            };
+            groups.push(newGroup);
+            saveData();
+            closeModal('group-modal');
+        });
+
+        render();
+    </script>
+</body>
+</html>
