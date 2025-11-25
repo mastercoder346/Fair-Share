@@ -310,8 +310,8 @@
         }
         
         @keyframes slideDown {
-            from { opacity: 0; transform: translateY(-10%); }
-            to { opacity: 1; transform: translateY(0); }
+            from { transform: translateY(-10%); }
+            to { transform: translateY(0); }
         }
 
         .group-actions {
@@ -1383,7 +1383,7 @@
                 <button class="btn-secondary" onclick="document.getElementById('import-file').click()">
                     ⬆️ Import Data from JSON
                 </button>
-                <input type="file" id="import-file" accept=".json" style="display:none;" onchange="importData(event)">
+                <input type="file" id="import-file" accept=".json" style="display:none;" onchange="initiateImport(event)">
             </div>
 
             <div class="modal-actions">
@@ -1546,6 +1546,10 @@
         
         // Tip Calc State - GLOBAL TRACKER
         let currentTipPct = 10;
+        
+        // Data buffer for import confirmation
+        let importDataBuffer = null; 
+
 
         // --- DOM Elements ---
         const friendsListEl = document.getElementById('friends-list');
@@ -1621,6 +1625,7 @@
             if(modalId === 'friend-modal') document.getElementById('friend-form').reset();
             if(modalId === 'group-modal') document.getElementById('group-form').reset();
             if(modalId === 'settle-modal') document.getElementById('settle-form').reset();
+            if(modalId === 'confirm-modal') importDataBuffer = null; // Clear buffer if import was cancelled
         }
         
         function openSettingsModal() { 
@@ -1949,28 +1954,60 @@
             document.body.removeChild(link);
         }
         
-        window.importData = function(event) {
+        // NEW: Initiate Import (reads file, then opens confirmation modal)
+        window.initiateImport = function(event) {
             const file = event.target.files[0];
             if (!file) return;
+            
             const reader = new FileReader();
             reader.onload = function(e) {
                 try {
                     const data = JSON.parse(e.target.result);
+                    
                     if (data.groups && data.friends && data.activities) {
-                        if(confirm("This will overwrite your current data. Are you sure?")) {
-                            groups = data.groups;
-                            friends = data.friends;
-                            activities = data.activities;
-                            if (data.appSettings) appSettings = data.appSettings;
-                            saveData();
-                            closeModal('settings-modal');
-                            alert("Data imported successfully!");
-                        }
-                    } else { alert("Invalid file format."); }
-                } catch (error) { alert("Error parsing file."); console.error(error); }
+                        importDataBuffer = data; // Store data in buffer
+                        closeModal('settings-modal');
+                        
+                        // Open confirmation modal
+                        confirmTitle.innerText = "Confirm Data Import";
+                        confirmMessage.innerText = "Are you sure you want to overwrite all current data with this imported file? This action is irreversible.";
+                        confirmWarning.style.display = 'block';
+                        confirmWarning.innerText = "WARNING: All unsaved data will be lost!";
+                        btnConfirmAction.onclick = window.executeImport;
+                        btnConfirmAction.innerText = "Overwrite Data";
+                        
+                        confirmModal.classList.add('active');
+
+                    } else { 
+                        // Use the existing alert modal for better UX than native alert()
+                        document.getElementById('alert-modal').querySelector('.modal-text').innerText = "Invalid file format. Please ensure the file contains 'groups', 'friends', and 'activities' arrays.";
+                        document.getElementById('alert-modal').classList.add('active');
+                    }
+                } catch (error) { 
+                    document.getElementById('alert-modal').querySelector('.modal-text').innerText = "Error parsing file. Check if the file is valid JSON.";
+                    document.getElementById('alert-modal').classList.add('active');
+                    console.error("Import error:", error); 
+                }
+                // Reset file input so same file can be selected again
                 event.target.value = '';
             };
             reader.readAsText(file);
+        }
+        
+        // NEW: Execute Import (triggered by confirmation modal)
+        window.executeImport = function() {
+            if (!importDataBuffer) return;
+            
+            groups = importDataBuffer.groups;
+            friends = importDataBuffer.friends;
+            activities = importDataBuffer.activities;
+            if (importDataBuffer.appSettings) appSettings = importDataBuffer.appSettings;
+            
+            saveData();
+            closeModal('confirm-modal');
+            
+            document.getElementById('alert-modal').querySelector('.modal-text').innerText = "Data imported successfully!";
+            document.getElementById('alert-modal').classList.add('active');
         }
 
         window.exportGroupHTML = function(groupId) {
