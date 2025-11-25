@@ -1056,6 +1056,7 @@
             FairShare
         </div>
         <div class="header-right">
+            <button class="btn-icon-header" onclick="openMoreAppsModal()" title="More Apps">▦</button>
             <button class="btn-icon-header" onclick="openTipModal()" title="Tip Calculator">🧮</button>
             <button class="btn-icon-header" onclick="openSettingsModal()" title="Settings">⚙️</button>
             <div class="user-avatar">
@@ -1484,6 +1485,43 @@
             </div>
         </div>
     </div>
+    
+    <!-- More Apps Modal -->
+    <div id="more-apps-modal" class="modal-overlay">
+        <div class="modal-content" style="max-width: 400px;">
+            <div class="modal-header">
+                <h3>More from Developer</h3>
+                <button class="btn-close" onclick="closeModal('more-apps-modal')">&times;</button>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 10px;">
+                <a href="https://mastercoder346.github.io/RideWise/" target="_blank" 
+                   style="display: flex; align-items: center; gap: 12px; padding: 16px; background: #e8f5ff; border-radius: 12px; text-decoration: none; transition: transform 0.2s, box-shadow 0.2s;"
+                   onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(0,0,0,0.1)';"
+                   onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none';">
+                    <div style="width: 40px; height: 40px; background: #3b82f6; color: white; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 1.3rem;">
+                        🚗
+                    </div>
+                    <div>
+                        <div style="font-weight: 600; color: #333; font-size: 1rem;">Ride Wise</div>
+                        <div style="font-size: 0.85rem; color: #666;">Ride sharing app</div>
+                    </div>
+                </a>
+                
+                <a href="https://mastercoder346.github.io/homeinventory/" target="_blank" 
+                   style="display: flex; align-items: center; gap: 12px; padding: 16px; background: #f0fdf9; border-radius: 12px; text-decoration: none; transition: transform 0.2s, box-shadow 0.2s;"
+                   onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(0,0,0,0.1)';"
+                   onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none';">
+                    <div style="width: 40px; height: 40px; background: #10b981; color: white; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 1.3rem;">
+                        🏠
+                    </div>
+                    <div>
+                        <div style="font-weight: 600; color: #333; font-size: 1rem;">Home Inventory</div>
+                        <div style="font-size: 0.85rem; color: #666;">Manage your home items</div>
+                    </div>
+                </a>
+            </div>
+        </div>
+    </div>
 
     <script>
         // --- Initial Data / State ---
@@ -1578,6 +1616,7 @@
         const alertModal = document.getElementById('alert-modal');
         const resetModal = document.getElementById('reset-modal');
         const tipModal = document.getElementById('tip-modal');
+        const moreAppsModal = document.getElementById('more-apps-modal');
         
         const expenseForm = document.getElementById('expense-form');
         const friendForm = document.getElementById('friend-form');
@@ -1905,7 +1944,10 @@
         window.openBreakdownModal = openBreakdownModal; 
         window.updateDropdowns = updateDropdowns; 
         window.openExpenseModal = openExpenseModal; 
-
+        
+        window.openMoreAppsModal = function() {
+            document.getElementById('more-apps-modal').classList.add('active');
+        }
         
         // --- Tip Logic ---
         window.openTipModal = function() {
