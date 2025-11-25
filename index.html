@@ -1533,7 +1533,15 @@
         let groups = JSON.parse(localStorage.getItem('fs_groups')) || defaultGroups;
         let friends = JSON.parse(localStorage.getItem('fs_friends')) || defaultFriends;
         let activities = JSON.parse(localStorage.getItem('fs_activities')) || defaultActivities;
-        
+
+        // Save defaults to localStorage if they were just loaded
+        if (!localStorage.getItem('fs_groups')) {
+            localStorage.setItem('fs_groups', JSON.stringify(groups));
+            localStorage.setItem('fs_friends', JSON.stringify(friends));
+            localStorage.setItem('fs_activities', JSON.stringify(activities));
+            localStorage.setItem('fs_settings', JSON.stringify(appSettings));
+        }
+
         let groupToDeleteId = null;
         let friendToDeleteId = null; 
         let activityToDeleteId = null; 
@@ -2856,7 +2864,8 @@
             saveData();
             closeModal('group-modal');
         });
-        
+        // Initial render on page load
+        render();
     </script>
 </body>
 </html>
