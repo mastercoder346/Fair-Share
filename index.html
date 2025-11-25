@@ -209,6 +209,28 @@
             cursor: pointer;
             margin-right: auto;
         }
+        
+        /* Search Bar */
+        .search-container {
+            margin-bottom: 16px;
+            position: relative;
+        }
+        .search-input {
+            width: 100%;
+            padding: 10px 12px 10px 36px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 0.9rem;
+            background: #fff;
+        }
+        .search-icon {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 1rem;
+            color: var(--text-light);
+        }
 
         /* --- Lists --- */
         .list-container {
@@ -230,6 +252,12 @@
         .group-block.expanded {
             border-color: var(--border);
             box-shadow: var(--shadow-soft);
+        }
+        
+        .group-block.archived {
+            opacity: 0.7;
+            background: #f9f9f9;
+            border: 1px dashed var(--border);
         }
 
         .group-header {
@@ -282,7 +310,7 @@
         }
         
         @keyframes slideDown {
-            from { opacity: 0; transform: translateY(-10px); }
+            from { opacity: 0; transform: translateY(-10%); }
             to { opacity: 1; transform: translateY(0); }
         }
 
@@ -320,6 +348,7 @@
         .btn-icon-group.breakdown { color: #3b82f6; background: #dbeafe; } /* Blue */
         .btn-icon-group.summary { color: #8b5cf6; background: #ede9fe; } /* Purple */
         .btn-icon-group.export { color: #f59e0b; background: #fef3c7; } /* Orange/Yellow */
+        .btn-icon-group.archive { color: #6b7280; background: #e5e7eb; } /* Gray */
         .btn-icon-group.delete { color: #ef4444; background: #fee2e2; } /* Red */
 
         /* List Item (Fixed Layout) */
@@ -982,6 +1011,21 @@
         .tip-result-row.total .tip-value {
             color: var(--primary);
         }
+        
+        /* Settings Toggle */
+        .toggle-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-top: 10px;
+            padding: 12px;
+            background: #f9f9f9;
+            border-radius: 8px;
+        }
+        .toggle-label {
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
 
         /* Utility */
         .empty-state {
@@ -1029,13 +1073,8 @@
             </div>
             <div class="divider"></div>
             <div class="balance-col">
-                <label>Pending Settlement</label>
+                <label>Total to be Settled</label>
                 <div class="amount text-green" id="total-owed">$0.00</div>
-            </div>
-            <div class="divider"></div>
-             <div class="balance-col">
-                <label>Total Settled</label>
-                <div class="amount text-blue" id="total-settled">$0.00</div>
             </div>
         </section>
 
@@ -1056,6 +1095,11 @@
         <!-- Recent Activity -->
         <section>
             <h2 id="activity-header">Recent Activity</h2>
+            <!-- Search Bar -->
+            <div class="search-container">
+                <span class="search-icon">🔍</span>
+                <input type="text" id="search-input" class="search-input" placeholder="Search expenses, people..." oninput="renderActivity()">
+            </div>
             <div id="activity-list" class="list-container">
                 <!-- Injected by JS -->
             </div>
@@ -1096,11 +1140,26 @@
                         <input type="text" id="desc-input" class="form-input" placeholder="e.g. Dinner at Mario's" required>
                     </div>
                 </div>
+                
+                <!-- Category (New) -->
+                <div class="form-group">
+                    <label class="form-label">Category (Optional)</label>
+                    <select id="category-input" class="form-input">
+                        <option value="">No Category</option>
+                        <option value="🍔 Food">🍔 Food & Drink</option>
+                        <option value="🛒 Groceries">🛒 Groceries</option>
+                        <option value="🏠 Rent">🏠 Rent/Bills</option>
+                        <option value="✈️ Travel">✈️ Travel</option>
+                        <option value="🎬 Entertainment">🎬 Entertainment</option>
+                        <option value="⛽ Transport">⛽ Transport</option>
+                        <option value="📦 Other">📦 Other</option>
+                    </select>
+                </div>
 
                 <div class="form-group">
                     <label class="form-label">Amount</label>
                     <div class="input-group">
-                        <span class="currency-symbol">$</span>
+                        <span class="currency-symbol currency-dynamic">$</span>
                         <input type="number" id="amount-input" class="form-input input-with-icon" placeholder="0.00" step="0.01" oninput="updateRemainingBalance()" required>
                     </div>
                 </div>
@@ -1174,7 +1233,7 @@
                 <div class="form-group">
                     <label class="form-label">Amount</label>
                     <div class="input-group">
-                        <span class="currency-symbol">$</span>
+                        <span class="currency-symbol currency-dynamic">$</span>
                         <input type="number" id="settle-amount-input" class="form-input input-with-icon" placeholder="0.00" step="0.01" required>
                     </div>
                 </div>
@@ -1239,7 +1298,7 @@
                 <div class="form-group">
                     <label class="form-label">Bill Amount</label>
                     <div class="input-group">
-                        <span class="currency-symbol">$</span>
+                        <span class="currency-symbol currency-dynamic">$</span>
                         <input type="number" id="tip-bill-amount" class="form-input input-with-icon" placeholder="0.00" step="0.01" oninput="calculateTip()">
                     </div>
                 </div>
@@ -1283,6 +1342,55 @@
             </div>
         </div>
     </div>
+    
+    <!-- Settings Modal (New) -->
+    <div id="settings-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Data & Settings</h3>
+                <button class="btn-close" onclick="closeModal('settings-modal')">&times;</button>
+            </div>
+            
+            <div style="display:flex; flex-direction:column; gap:16px;">
+                <!-- Currency Selector -->
+                <div class="form-group">
+                    <label class="form-label">Currency Symbol</label>
+                    <select id="currency-select" class="form-input" onchange="updateCurrencyAndSave(this.value)">
+                        <option value="$">USD ($)</option>
+                        <option value="€">EUR (€)</option>
+                        <option value="£">GBP (£)</option>
+                        <option value="₹">INR (₹)</option>
+                        <option value="¥">JPY (¥)</option>
+                    </select>
+                </div>
+
+                <!-- Show Archived Toggle -->
+                <div class="toggle-container">
+                    <span class="toggle-label">Show Archived Groups</span>
+                    <input type="checkbox" id="show-archived-toggle" onchange="toggleShowArchived(this.checked)">
+                </div>
+
+                <div style="height:1px; background:#eee; margin:8px 0;"></div>
+                
+                <div>
+                    <p class="modal-text" style="font-size:0.8rem;">Backup your data to a JSON file or restore from a previous backup.</p>
+                </div>
+                
+                <button class="btn-submit" onclick="exportData()">
+                    ⬇️ Export Data to JSON
+                </button>
+                
+                <button class="btn-secondary" onclick="document.getElementById('import-file').click()">
+                    ⬆️ Import Data from JSON
+                </button>
+                <input type="file" id="import-file" accept=".json" style="display:none;" onchange="importData(event)">
+            </div>
+
+            <div class="modal-actions">
+                 <button class="btn-secondary" onclick="closeModal('settings-modal')">Close</button>
+            </div>
+        </div>
+    </div>
 
     <!-- Add Friend Modal -->
     <div id="friend-modal" class="modal-overlay">
@@ -1321,35 +1429,6 @@
                 </div>
                 <button type="submit" class="btn-submit">Create Group</button>
             </form>
-        </div>
-    </div>
-    
-    <!-- Settings Modal -->
-    <div id="settings-modal" class="modal-overlay">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>Data & Settings</h3>
-                <button class="btn-close" onclick="closeModal('settings-modal')">&times;</button>
-            </div>
-            
-            <div style="display:flex; flex-direction:column; gap:16px;">
-                <div>
-                    <p class="modal-text">Backup your data to a JSON file or restore from a previous backup.</p>
-                </div>
-                
-                <button class="btn-submit" onclick="exportData()">
-                    ⬇️ Export Data to JSON
-                </button>
-                
-                <button class="btn-secondary" onclick="document.getElementById('import-file').click()">
-                    ⬆️ Import Data from JSON
-                </button>
-                <input type="file" id="import-file" accept=".json" style="display:none;" onchange="importData(event)">
-            </div>
-
-            <div class="modal-actions">
-                 <button class="btn-secondary" onclick="closeModal('settings-modal')">Close</button>
-            </div>
         </div>
     </div>
 
@@ -1408,9 +1487,11 @@
 
     <script>
         // --- Initial Data / State ---
+        let appSettings = JSON.parse(localStorage.getItem('fs_settings')) || { currency: '$', showArchived: false };
+        
         const defaultGroups = [
-            { id: 1, name: 'Apartment' },
-            { id: 2, name: 'Trip to Cabo' }
+            { id: 1, name: 'Apartment', archived: false },
+            { id: 2, name: 'Trip to Cabo', archived: false }
         ];
 
         const defaultFriends = [
@@ -1430,7 +1511,8 @@
                 consumers: [{id: 1, amount: 15.50}, {id: 2, amount: 15.50}], 
                 payerName: 'Mike', 
                 splitMethod: 'equal',
-                type: 'expense'
+                type: 'expense',
+                category: '⛽ Transport'
             },
             { 
                 id: 102, 
@@ -1442,7 +1524,8 @@
                 consumers: [{id: 3, amount: 48.00}], 
                 payerName: 'Mike',
                 splitMethod: 'equal',
-                type: 'expense'
+                type: 'expense',
+                category: '🎬 Entertainment'
             }
         ];
 
@@ -1459,8 +1542,9 @@
         
         // Accordion State
         let expandedGroupId = null;
+        if(groups.length > 0) expandedGroupId = groups[0].id;
         
-        // Tip Calc State
+        // Tip Calc State - GLOBAL TRACKER
         let currentTipPct = 10;
 
         // --- DOM Elements ---
@@ -1469,6 +1553,7 @@
         const activityHeader = document.getElementById('activity-header');
         const totalOweEl = document.getElementById('total-owe');
         const totalOwedEl = document.getElementById('total-owed');
+        const searchInput = document.getElementById('search-input');
         
         const expenseModal = document.getElementById('expense-modal');
         const friendModal = document.getElementById('friend-modal');
@@ -1496,6 +1581,7 @@
         const dateInput = document.getElementById('date-input');
         const expenseModalTitle = document.getElementById('expense-modal-title');
         const btnSaveExpense = document.getElementById('btn-save-expense');
+        const categoryInput = document.getElementById('category-input');
 
         const groupSelectAssign = document.getElementById('group-select-assign');
         const confirmWarning = document.getElementById('confirm-warning');
@@ -1512,548 +1598,186 @@
         const settleRecipientSelect = document.getElementById('settle-recipient-select');
         const settleAmountInput = document.getElementById('settle-amount-input');
         const settleDateInput = document.getElementById('settle-date-input');
-        
-        // Tip Elements
-        const tipBillAmount = document.getElementById('tip-bill-amount');
-        const tipCustomPct = document.getElementById('tip-custom-pct');
-        const tipSplitCount = document.getElementById('tip-split-count');
-        const resTipAmount = document.getElementById('res-tip-amount');
-        const resTotalAmount = document.getElementById('res-total-amount');
-        const resPerPerson = document.getElementById('res-per-person');
 
-
-        // --- Core Logic ---
-        
-        // Init Logic for Accordion
-        if (groups.length > 0) {
-            expandedGroupId = groups[0].id;
-        }
+        // --- Core Functions ---
 
         function saveData() {
             localStorage.setItem('fs_groups', JSON.stringify(groups));
             localStorage.setItem('fs_friends', JSON.stringify(friends));
             localStorage.setItem('fs_activities', JSON.stringify(activities));
+            localStorage.setItem('fs_settings', JSON.stringify(appSettings));
             render();
         }
         
-        // --- TIP CALCULATOR LOGIC ---
-        function openTipModal() {
-            tipModal.classList.add('active');
-            // Reset state
-            tipBillAmount.value = '';
-            tipSplitCount.value = 1;
-            tipCustomPct.value = '';
-            setTipPct(15); // Default to 15%
-        }
-
-        function setTipPct(pct) {
-            currentTipPct = pct;
-            // Clear custom input if we picked a preset
-            if (pct !== 'custom') {
-                 tipCustomPct.value = '';
-                 // Visual updates
-                 document.querySelectorAll('.tip-options .chip').forEach(c => c.classList.remove('active'));
-                 document.getElementById(`tip-${pct}`)?.classList.add('active');
-            } else {
-                 // Custom was typed, deselect others
-                 document.querySelectorAll('.tip-options .chip').forEach(c => c.classList.remove('active'));
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.remove('active');
+            if(modalId === 'expense-modal') {
+                document.getElementById('expense-form').reset();
+                document.getElementById('multi-payer-container').style.display = 'none';
+                document.getElementById('amount-input').readOnly = false;
+                editingActivityId = null;
+                document.getElementById('expense-group-select').disabled = false;
             }
-            calculateTip();
+            if(modalId === 'friend-modal') document.getElementById('friend-form').reset();
+            if(modalId === 'group-modal') document.getElementById('group-form').reset();
+            if(modalId === 'settle-modal') document.getElementById('settle-form').reset();
         }
         
-        function setCustomTip() {
-             const val = parseFloat(tipCustomPct.value);
-             if (!isNaN(val)) {
-                 setTipPct('custom');
-                 currentTipPct = val; // Use input value
-                 calculateTip();
-             }
+        function openSettingsModal() { 
+            // Update UI settings before opening
+            document.getElementById('currency-select').value = appSettings.currency;
+            document.getElementById('show-archived-toggle').checked = appSettings.showArchived;
+            document.getElementById('settings-modal').classList.add('active'); 
+        }
+        function openResetModal() { document.getElementById('reset-modal').classList.add('active'); }
+        function executeReset() { localStorage.clear(); location.reload(); }
+        function openGroupModal() { document.getElementById('group-modal').classList.add('active'); }
+        
+        function updateDropdowns() {
+            if(expenseGroupSelect) {
+                const currentVal = expenseGroupSelect.value;
+                const activeGroups = groups.filter(g => !g.archived);
+                expenseGroupSelect.innerHTML = activeGroups.map(g => 
+                    `<option value="${g.id}">${g.name}</option>`
+                ).join('');
+                if (currentVal && activeGroups.some(g => g.id == currentVal)) {
+                    expenseGroupSelect.value = currentVal;
+                } else if (activeGroups.length > 0) {
+                    expenseGroupSelect.value = activeGroups[0].id;
+                }
+            }
+            if(groupSelectAssign) {
+                const activeGroups = groups.filter(g => !g.archived).sort((a, b) => a.id - b.id);
+                groupSelectAssign.innerHTML = activeGroups.map(g => 
+                    `<option value="${g.id}">${g.name}</option>`
+                ).join('');
+                 // Set default to the newest group (last in sorted list)
+                if (activeGroups.length > 0) {
+                    groupSelectAssign.value = activeGroups[activeGroups.length - 1].id;
+                }
+            }
         }
 
-        function adjustSplit(delta) {
-            let count = parseInt(tipSplitCount.value) || 1;
-            count += delta;
-            if (count < 1) count = 1;
-            tipSplitCount.value = count;
-            calculateTip();
+        function openFriendModal() {
+            if (groups.filter(g => !g.archived).length === 0) { document.getElementById('alert-modal').classList.add('active'); return; }
+            
+            // 1. Populate the dropdowns first
+            updateDropdowns();
+            
+            // 2. Set the default value (already done inside updateDropdowns now)
+            
+            document.getElementById('friend-modal').classList.add('active');
         }
         
-        function calculateTip() {
-            const bill = parseFloat(tipBillAmount.value) || 0;
-            let pct = currentTipPct;
-            if (tipCustomPct.value !== '') {
-                pct = parseFloat(tipCustomPct.value) || 0;
+        function openExpenseModal() {
+            if (friends.length === 0) {
+                document.getElementById('alert-modal').classList.add('active');
+                return;
+            }
+            editingActivityId = null;
+            document.getElementById('expense-modal-title').innerText = "Add expense";
+            document.getElementById('btn-save-expense').innerText = "Save Expense";
+            document.getElementById('expense-group-select').disabled = false;
+            
+            document.getElementById('expense-modal').classList.add('active');
+            
+            window.updateDropdowns();
+            
+            if (expandedGroupId) {
+                 document.getElementById('expense-group-select').value = expandedGroupId;
             }
             
-            const count = parseInt(tipSplitCount.value) || 1;
+            currentSplitMethod = null; 
+            window.setSplitMethod('equal');
             
-            const tipAmt = bill * (pct / 100);
-            const total = bill + tipAmt;
-            const perPerson = total / count;
+            // Default Date to Today
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('date-input').value = today;
             
-            resTipAmount.innerText = `$${tipAmt.toFixed(2)}`;
-            resTotalAmount.innerText = `$${total.toFixed(2)}`;
-            resPerPerson.innerText = `$${perPerson.toFixed(2)}`;
+            document.getElementById('desc-input').focus();
         }
 
-        // --- Helper Functions Defined First for Global Access ---
-        
         function simplifyDebts(groupFriends) {
             let debtors = groupFriends.filter(f => f.balance < -0.01).map(f => ({...f}));
             let creditors = groupFriends.filter(f => f.balance > 0.01).map(f => ({...f}));
-            
             debtors.sort((a, b) => a.balance - b.balance); 
             creditors.sort((a, b) => b.balance - a.balance); 
 
             let transactions = [];
-            let i = 0;
-            let j = 0;
-
+            let i = 0; let j = 0;
             while (i < debtors.length && j < creditors.length) {
                 let debtor = debtors[i];
                 let creditor = creditors[j];
-
                 let amount = Math.min(Math.abs(debtor.balance), creditor.balance);
                 amount = Math.round(amount * 100) / 100;
 
                 if (amount > 0) {
-                    transactions.push({
-                        from: debtor.name,
-                        to: creditor.name,
-                        fromId: debtor.id,
-                        toId: creditor.id,
-                        amount: amount,
-                        fromAvatar: debtor.avatar,
-                        toAvatar: creditor.avatar
-                    });
+                    transactions.push({ from: debtor.name, to: creditor.name, fromId: debtor.id, toId: creditor.id, amount: amount, fromAvatar: debtor.avatar, toAvatar: creditor.avatar });
                 }
-
                 debtor.balance += amount;
                 creditor.balance -= amount;
-
                 if (Math.abs(debtor.balance) < 0.01) i++;
                 if (creditor.balance < 0.01) j++;
             }
-
             return transactions;
-        }
-        
-        function updateSettleSuggestion() {
-             const payerId = parseInt(settlePayerSelect.value);
-             const recipientId = parseInt(settleRecipientSelect.value);
-             
-             if(!payerId || !recipientId) return;
-             
-             const payer = friends.find(f => f.id === payerId);
-             if(!payer) return;
-             
-             const groupFriends = friends.filter(f => f.groupId === payer.groupId);
-             const suggestions = simplifyDebts(groupFriends);
-             
-             const match = suggestions.find(s => s.fromId === payerId && s.toId === recipientId);
-             
-             if (match) {
-                 settleAmountInput.value = match.amount.toFixed(2);
-             } else {
-                 settleAmountInput.value = '';
-             }
         }
 
         function openSettleModal(groupId, prefillPayerId, prefillRecipientId, prefillAmount) {
             const group = groups.find(g => g.id === groupId);
             const groupFriends = friends.filter(f => f.groupId === groupId);
+            if(!group || groupFriends.length < 2) { alert("Need at least 2 people to settle."); return; }
             
-            if(!group || groupFriends.length < 2) {
-                alert("Need at least 2 people in group to settle.");
-                return;
-            }
+            const selP = document.getElementById('settle-payer-select');
+            const selR = document.getElementById('settle-recipient-select');
+            const ops = groupFriends.map(f => `<option value="${f.id}">${f.name}</option>`).join('');
+            selP.innerHTML = ops; selR.innerHTML = ops;
             
-            const options = groupFriends.map(f => `<option value="${f.id}">${f.name}</option>`).join('');
-            settlePayerSelect.innerHTML = options;
-            settleRecipientSelect.innerHTML = options;
-            
-            let amountToFill = '';
-
-            if(prefillPayerId && prefillRecipientId && prefillAmount) {
-                settlePayerSelect.value = prefillPayerId;
-                settleRecipientSelect.value = prefillRecipientId;
-                amountToFill = prefillAmount;
+            if(prefillPayerId && prefillRecipientId) {
+                selP.value = prefillPayerId; selR.value = prefillRecipientId;
+                document.getElementById('settle-amount-input').value = prefillAmount ? parseFloat(prefillAmount).toFixed(2) : '';
             } else {
-                const suggestions = simplifyDebts(groupFriends);
-                if (suggestions.length > 0) {
-                    const suggestion = suggestions[0];
-                    settlePayerSelect.value = suggestion.fromId;
-                    settleRecipientSelect.value = suggestion.toId;
-                    amountToFill = suggestion.amount;
-                } else {
-                    settlePayerSelect.selectedIndex = 0;
-                    settleRecipientSelect.selectedIndex = 1;
-                }
+                // Suggestion logic
+                const sugg = simplifyDebts(groupFriends);
+                if(sugg.length>0) { selP.value=sugg[0].fromId; selR.value=sugg[0].toId; document.getElementById('settle-amount-input').value=sugg[0].amount.toFixed(2); }
+                else { selP.selectedIndex=0; selR.selectedIndex=1; document.getElementById('settle-amount-input').value=''; }
             }
-            
-            if (amountToFill) {
-                settleAmountInput.value = parseFloat(amountToFill).toFixed(2);
-            } else {
-                settleAmountInput.value = '';
-            }
-            
-            settleDateInput.valueAsDate = new Date();
+            document.getElementById('settle-date-input').valueAsDate = new Date();
             closeModal('summary-modal');
-            settleModal.classList.add('active');
+            document.getElementById('settle-modal').classList.add('active');
+        }
+
+        function updateSettleSuggestion() {
+             const pId = parseInt(document.getElementById('settle-payer-select').value);
+             const rId = parseInt(document.getElementById('settle-recipient-select').value);
+             if(!pId || !rId) return;
+             const payer = friends.find(f=>f.id===pId);
+             if(!payer) return;
+             const gFriends = friends.filter(f=>f.groupId === payer.groupId);
+             const suggs = simplifyDebts(gFriends);
+             const match = suggs.find(s => s.fromId === pId && s.toId === rId);
+             document.getElementById('settle-amount-input').value = match ? match.amount.toFixed(2) : '';
         }
 
         function openSummaryModal(groupId) {
             const group = groups.find(g => g.id === groupId);
-            const groupFriends = friends.filter(f => f.groupId === groupId);
-            
-            if(!group || groupFriends.length === 0) return;
-            
-            summaryTitle.innerText = `${group.name} Summary`;
-            const transactions = simplifyDebts(groupFriends);
-            
-            if (transactions.length === 0) {
-                summaryList.innerHTML = '<div class="empty-state">Everyone is settled up!</div>';
-            } else {
-                summaryList.innerHTML = transactions.map(t => `
+            const gFriends = friends.filter(f => f.groupId === groupId);
+            if(!group) return;
+            document.getElementById('summary-title').innerText = `${group.name} Summary`;
+            const txs = simplifyDebts(gFriends);
+            const list = document.getElementById('summary-list');
+            if(txs.length === 0) list.innerHTML = '<div class="empty-state">Everyone is settled up!</div>';
+            else {
+                list.innerHTML = txs.map(t => `
                     <div class="debt-line">
-                        <div class="debt-part">
-                            <div class="user-avatar" style="width:24px;height:24px;font-size:0.8rem;">
-                                ${t.from.charAt(0).toUpperCase()}
-                            </div>
-                            ${t.from}
-                        </div>
-                        <div class="debt-arrow">
-                             <span>pays <span class="debt-amount">$${t.amount.toFixed(2)}</span> to</span>
-                             <button class="btn-settle-small" onclick="openSettleModal(${groupId}, ${t.fromId}, ${t.toId}, ${t.amount})">Settle</button>
-                        </div>
-                        <div class="debt-part">
-                            <div class="user-avatar" style="width:24px;height:24px;font-size:0.8rem;">
-                                ${t.to.charAt(0).toUpperCase()}
-                            </div>
-                            ${t.to}
-                        </div>
-                    </div>
-                `).join('');
+                        <div class="debt-part"><div class="user-avatar" style="width:24px;height:24px;font-size:0.8rem;">${t.from.charAt(0)}</div>${t.from}</div>
+                        <div class="debt-arrow"><span>pays <span class="debt-amount">$${t.amount.toFixed(2)}</span> to</span>
+                        <button class="btn-settle-small" onclick="openSettleModal(${groupId}, ${t.fromId}, ${t.toId}, ${t.amount})">Settle</button></div>
+                        <div class="debt-part"><div class="user-avatar" style="width:24px;height:24px;font-size:0.8rem;">${t.to.charAt(0)}</div>${t.to}</div>
+                    </div>`).join('');
             }
-            summaryModal.classList.add('active');
+            document.getElementById('summary-modal').classList.add('active');
         }
         
-        // --- Import / Export Logic ---
-        function openSettingsModal() {
-            settingsModal.classList.add('active');
-        }
-        
-        function exportData() {
-            const data = {
-                groups: groups,
-                friends: friends,
-                activities: activities
-            };
-            
-            const dataStr = JSON.stringify(data, null, 2);
-            const blob = new Blob([dataStr], { type: "application/json" });
-            const url = URL.createObjectURL(blob);
-            
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = `fairshare_data_${new Date().toISOString().split('T')[0]}.json`;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-        }
-        
-        function importData(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-            
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                try {
-                    const data = JSON.parse(e.target.result);
-                    
-                    // Basic validation
-                    if (data.groups && data.friends && data.activities) {
-                        if(confirm("This will overwrite your current data. Are you sure?")) {
-                            groups = data.groups;
-                            friends = data.friends;
-                            activities = data.activities;
-                            saveData();
-                            closeModal('settings-modal');
-                            alert("Data imported successfully!");
-                        }
-                    } else {
-                        alert("Invalid file format.");
-                    }
-                } catch (error) {
-                    alert("Error parsing file.");
-                    console.error(error);
-                }
-                // Reset input
-                event.target.value = '';
-            };
-            reader.readAsText(file);
-        }
-
-        function openResetModal() {
-            resetModal.classList.add('active');
-        }
-
-        function executeReset() {
-            localStorage.clear();
-            location.reload();
-        }
-        
-        // RECALCULATE LOGIC: Single Source of Truth
-        function recalculateAllBalances() {
-            // 1. Reset everyone to 0
-            friends.forEach(f => f.balance = 0);
-            
-            // 2. Replay History
-            activities.forEach(act => {
-                const amount = parseFloat(act.amount) || 0;
-                const activityGroupId = act.groupId; // Get context
-                
-                if (act.type === 'expense') {
-                    // Robust check: Ensure arrays exist before iterating
-                    if (Array.isArray(act.payers)) {
-                        act.payers.forEach(p => {
-                            const f = friends.find(friend => friend.id == p.id);
-                            // Enforce Group Isolation
-                            if(f && f.groupId === activityGroupId) {
-                                f.balance += parseFloat(p.amount);
-                            }
-                        });
-                    }
-                    
-                    if (Array.isArray(act.consumers)) {
-                        act.consumers.forEach(c => {
-                            const f = friends.find(friend => friend.id == c.id);
-                            // Enforce Group Isolation
-                            if(f && f.groupId === activityGroupId) {
-                                f.balance -= parseFloat(c.amount);
-                            }
-                        });
-                    }
-                } else if (act.type === 'settlement') {
-                    let payer, recipient;
-                    
-                    // Robust ID check
-                    if (act.payerId && act.recipientId) {
-                         payer = friends.find(f => f.id == act.payerId);
-                         recipient = friends.find(f => f.id == act.recipientId);
-                    } 
-                    // Fallback to Name matching (Legacy support)
-                    else {
-                         const groupFriends = friends.filter(f => f.groupId === act.groupId);
-                         payer = groupFriends.find(f => f.name === act.payerName);
-                         recipient = groupFriends.find(f => f.name === act.recipientName);
-                    }
-
-                    // Enforce Group Isolation
-                    if (payer && payer.groupId === activityGroupId) {
-                        payer.balance += amount;
-                    }
-                    if (recipient && recipient.groupId === activityGroupId) {
-                        recipient.balance -= amount;
-                    }
-                }
-            });
-        }
-
-        function calculateTotals() {
-            let totalPositive = 0;
-            let totalNegative = 0;
-            let totalSettled = 0;
-
-            const friendsToSum = expandedGroupId 
-                ? friends.filter(f => f.groupId === expandedGroupId)
-                : friends;
-
-            friendsToSum.forEach(f => {
-                if (f.balance > 0) totalPositive += f.balance;
-                if (f.balance < 0) totalNegative += Math.abs(f.balance);
-            });
-            
-            const actsToSum = expandedGroupId 
-                ? activities.filter(a => a.groupId === expandedGroupId)
-                : activities;
-                
-            actsToSum.forEach(a => {
-                if (a.type === 'settlement') {
-                    totalSettled += parseFloat(a.amount) || 0;
-                }
-            });
-
-            totalOwedEl.innerText = `$${totalPositive.toFixed(2)}`;
-            totalOweEl.innerText = `$${totalNegative.toFixed(2)}`;
-            
-            const totalSettledEl = document.getElementById('total-settled');
-            if(totalSettledEl) {
-                 totalSettledEl.innerText = `$${totalSettled.toFixed(2)}`;
-            }
-        }
-        
-        function toggleGroup(groupId) {
-            if (expandedGroupId === groupId) {
-                expandedGroupId = null;
-            } else {
-                expandedGroupId = groupId;
-            }
-            render();
-        }
-
-        function renderFriends() {
-            friendsListEl.innerHTML = '';
-
-            if (groups.length === 0) {
-                friendsListEl.innerHTML = '<div class="empty-state">No groups yet. Create one!</div>';
-                return;
-            }
-
-            groups.forEach(group => {
-                const groupFriends = friends.filter(f => f.groupId === group.id);
-                const isExpanded = group.id === expandedGroupId;
-                
-                // Wrapper for accordion logic
-                const groupBlock = document.createElement('div');
-                groupBlock.className = `group-block ${isExpanded ? 'expanded' : ''}`;
-                
-                // Header
-                const header = document.createElement('div');
-                header.className = 'group-header';
-                header.onclick = () => toggleGroup(group.id);
-                
-                // Left side: Chevron + Title
-                const leftDiv = document.createElement('div');
-                leftDiv.className = 'group-header-left';
-                leftDiv.innerHTML = `
-                    <span class="group-chevron">›</span>
-                    <span>${group.name}</span>
-                `;
-                
-                // Right side: Actions
-                const actionDiv = document.createElement('div');
-                actionDiv.className = 'group-actions';
-
-                // Settle Up Button
-                const settleBtn = document.createElement('button');
-                settleBtn.className = 'btn-icon-group settle'; // Added class
-                settleBtn.innerHTML = '🤝'; 
-                settleBtn.title = 'Settle Up';
-                settleBtn.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    openSettleModal(group.id);
-                });
-
-                // Breakdown Button
-                const breakdownBtn = document.createElement('button');
-                breakdownBtn.className = 'btn-icon-group breakdown'; // Added class
-                breakdownBtn.innerHTML = '📄'; 
-                breakdownBtn.title = 'View Expense Breakdown';
-                breakdownBtn.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    openBreakdownModal(group.id);
-                });
-
-                // Summary Button
-                const summaryBtn = document.createElement('button');
-                summaryBtn.className = 'btn-icon-group summary'; // Added class
-                summaryBtn.innerHTML = '📊'; 
-                summaryBtn.title = 'View Debts Summary';
-                summaryBtn.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    openSummaryModal(group.id);
-                });
-
-                // Export Button (New)
-                const exportBtn = document.createElement('button');
-                exportBtn.className = 'btn-icon-group export'; // Added class
-                exportBtn.innerHTML = '📤'; 
-                exportBtn.title = 'Export as HTML Report';
-                exportBtn.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    exportGroupHTML(group.id);
-                });
-
-                // Delete Button
-                const deleteBtn = document.createElement('button');
-                deleteBtn.className = 'btn-icon-group delete'; // Added class
-                deleteBtn.innerHTML = '&times;';
-                deleteBtn.title = 'Delete Group';
-                deleteBtn.addEventListener('click', (e) => {
-                    e.stopPropagation(); 
-                    initiateDeleteGroup(group.id);
-                });
-
-                actionDiv.appendChild(settleBtn);
-                actionDiv.appendChild(breakdownBtn);
-                actionDiv.appendChild(summaryBtn);
-                actionDiv.appendChild(exportBtn);
-                actionDiv.appendChild(deleteBtn);
-
-                header.appendChild(leftDiv);
-                header.appendChild(actionDiv);
-                
-                // Content (Friends List)
-                const content = document.createElement('div');
-                content.className = 'group-content';
-
-                if (groupFriends.length === 0) {
-                    const emptyItem = document.createElement('div');
-                    emptyItem.className = 'list-item';
-                    emptyItem.style.color = 'var(--text-light)';
-                    emptyItem.style.justifyContent = 'center';
-                    emptyItem.style.fontStyle = 'italic';
-                    emptyItem.innerText = 'No friends in this group yet';
-                    content.appendChild(emptyItem);
-                } else {
-                    groupFriends.forEach(f => {
-                        let balanceText = '';
-                        let balanceClass = 'text-gray';
-                        let statusLabel = 'settled up';
-
-                        if (f.balance > 0.01) {
-                            balanceText = `$${f.balance.toFixed(2)}`;
-                            balanceClass = 'text-green';
-                            statusLabel = 'gets back';
-                        } else if (f.balance < -0.01) {
-                            balanceText = `$${Math.abs(f.balance).toFixed(2)}`;
-                            balanceClass = 'text-red';
-                            statusLabel = 'owes';
-                        }
-
-                        const item = document.createElement('div');
-                        item.className = 'list-item';
-                        item.innerHTML = `
-                            <div class="item-left">
-                                <div class="user-avatar">
-                                    ${f.name.charAt(0).toUpperCase()}
-                                </div>
-                                <div class="item-details">
-                                    <h3>${f.name}</h3>
-                                </div>
-                            </div>
-                            <div style="display:flex; align-items:center;">
-                                <div class="item-right">
-                                    <span class="status">${statusLabel}</span>
-                                    <span class="value ${balanceClass}">${balanceText}</span>
-                                </div>
-                                <button class="btn-delete-friend" onclick="initiateDeleteFriend(${f.id})" title="Remove ${f.name}">&times;</button>
-                            </div>
-                        `;
-                        content.appendChild(item);
-                    });
-                }
-                
-                groupBlock.appendChild(header);
-                groupBlock.appendChild(content);
-                friendsListEl.appendChild(groupBlock);
-            });
-
-            updateDropdowns();
-        }
-        
-        // --- Breakdown Logic (New) ---
         function openBreakdownModal(groupId) {
             const group = groups.find(g => g.id === groupId);
             const groupFriends = friends.filter(f => f.groupId === groupId);
@@ -2061,14 +1785,13 @@
             
             if(!group || groupFriends.length === 0) return;
             
-            breakdownTitle.innerText = `${group.name} Breakdown`;
+            document.getElementById('breakdown-title').innerText = `${group.name} Breakdown`;
             
             // Aggregate expenses by user
             const userExpenses = {};
             groupFriends.forEach(f => {
                 userExpenses[f.id] = {
                     name: f.name,
-                    avatar: f.avatar,
                     paidItems: [],
                     paidTotal: 0,
                     sharedItems: [],
@@ -2081,11 +1804,7 @@
                 if(act.payers) {
                     act.payers.forEach(p => {
                         if(userExpenses[p.id]) {
-                            userExpenses[p.id].paidItems.push({
-                                desc: act.desc,
-                                amount: p.amount,
-                                date: act.date
-                            });
+                            userExpenses[p.id].paidItems.push({ desc: act.desc, amount: p.amount, date: act.date });
                             userExpenses[p.id].paidTotal += p.amount;
                         }
                     });
@@ -2095,11 +1814,7 @@
                 if(act.consumers) {
                     act.consumers.forEach(c => {
                         if(userExpenses[c.id]) {
-                            userExpenses[c.id].sharedItems.push({
-                                desc: act.desc,
-                                amount: c.amount,
-                                date: act.date
-                            });
+                            userExpenses[c.id].sharedItems.push({ desc: act.desc, amount: c.amount, date: act.date });
                             userExpenses[c.id].sharedTotal += c.amount;
                         }
                     });
@@ -2107,39 +1822,22 @@
             });
 
             let html = '';
+            const currency = appSettings.currency;
             groupFriends.forEach(f => {
                 const data = userExpenses[f.id];
                 if(!data) return;
                 
-                // Sort items by date desc
                 data.paidItems.sort((a,b) => new Date(b.date) - new Date(a.date));
                 data.sharedItems.sort((a,b) => new Date(b.date) - new Date(a.date));
 
                 const paidHtml = data.paidItems.length > 0 
-                    ? data.paidItems.map(item => `
-                        <div class="breakdown-item">
-                            <div>
-                                <span class="date">${new Date(item.date).toLocaleDateString(undefined, {month:'short', day:'numeric'})}</span>
-                                ${item.desc}
-                            </div>
-                            <div style="font-weight:600;">$${item.amount.toFixed(2)}</div>
-                        </div>
-                      `).join('')
+                    ? data.paidItems.map(item => `<div class="breakdown-item"><div><span class="date">${new Date(item.date).toLocaleDateString(undefined, {month:'short', day:'numeric'})}</span>${item.desc}</div><div style="font-weight:600;">${currency}${item.amount.toFixed(2)}</div></div>`).join('')
                     : '<div class="breakdown-item" style="justify-content:center; font-style:italic; color:var(--text-light);">No expenses paid</div>';
 
                 const splitHtml = data.sharedItems.length > 0 
-                    ? data.sharedItems.map(item => `
-                        <div class="breakdown-item">
-                            <div>
-                                <span class="date">${new Date(item.date).toLocaleDateString(undefined, {month:'short', day:'numeric'})}</span>
-                                ${item.desc}
-                            </div>
-                            <div>$${item.amount.toFixed(2)}</div>
-                        </div>
-                      `).join('')
+                    ? data.sharedItems.map(item => `<div class="breakdown-item"><div><span class="date">${new Date(item.date).toLocaleDateString(undefined, {month:'short', day:'numeric'})}</span>${item.desc}</div><div>${currency}${item.amount.toFixed(2)}</div></div>`).join('')
                     : '<div class="breakdown-item" style="justify-content:center; font-style:italic; color:var(--text-light);">No expenses shared</div>';
 
-                // Net Balance for Display
                 const net = data.paidTotal - data.sharedTotal;
                 const netClass = net >= 0 ? 'text-green' : 'text-red';
                 const netLabel = net >= 0 ? 'Gets back' : 'Owes';
@@ -2154,21 +1852,21 @@
                                 <span>${data.name}</span>
                             </div>
                             <div class="${netClass}" style="font-size:0.9rem;">
-                                ${netLabel} $${Math.abs(net).toFixed(2)}
+                                ${netLabel} ${currency}${Math.abs(net).toFixed(2)}
                             </div>
                         </div>
                         <div class="breakdown-columns">
                             <div class="breakdown-col">
                                 <div class="breakdown-col-header paid">
                                     <span>Paid</span>
-                                    <span>$${data.paidTotal.toFixed(2)}</span>
+                                    <span>${currency}${data.paidTotal.toFixed(2)}</span>
                                 </div>
                                 <div>${paidHtml}</div>
                             </div>
                             <div class="breakdown-col">
                                 <div class="breakdown-col-header split">
                                     <span>Shared</span>
-                                    <span>$${data.sharedTotal.toFixed(2)}</span>
+                                    <span>${currency}${data.sharedTotal.toFixed(2)}</span>
                                 </div>
                                 <div>${splitHtml}</div>
                             </div>
@@ -2178,148 +1876,617 @@
             });
 
             breakdownList.innerHTML = html;
-            breakdownModal.classList.add('active');
+            document.getElementById('breakdown-modal').classList.add('active');
         }
 
-        // --- Deletion Logic (Consolidated) ---
+        // --- Assignments to Window ---
+        window.openSettingsModal = openSettingsModal;
+        window.openResetModal = openResetModal;
+        window.executeReset = executeReset;
+        window.openGroupModal = openGroupModal;
+        window.openFriendModal = openFriendModal;
+        window.closeModal = closeModal;
+        window.openSettleModal = openSettleModal;
+        window.updateSettleSuggestion = updateSettleSuggestion;
+        window.openSummaryModal = openSummaryModal;
+        window.openBreakdownModal = openBreakdownModal; 
+        window.updateDropdowns = updateDropdowns; 
+        window.openExpenseModal = openExpenseModal; 
+
         
-        function initiateDeleteGroup(id) {
-            groupToDeleteId = id;
-            const groupFriends = friends.filter(f => f.groupId === id);
-            const hasBalance = groupFriends.some(f => Math.abs(f.balance) > 0.01);
-            
-            confirmTitle.innerText = "Delete Group";
-            confirmMessage.innerText = "Are you sure you want to delete this group and all its members?";
-            
-            if (hasBalance) {
-                confirmWarning.style.display = 'block';
-                confirmWarning.innerText = "WARNING: Some members have unpaid balances! Deleting this will remove those debts.";
+        // --- Tip Logic ---
+        window.openTipModal = function() {
+            document.getElementById('tip-modal').classList.add('active');
+            document.getElementById('tip-bill-amount').value = '';
+            document.getElementById('tip-split-count').value = 1;
+            window.setTipPct(15);
+        }
+        window.setTipPct = function(pct) {
+            currentTipPct = pct;
+            if (pct !== 'custom') {
+                 document.getElementById('tip-custom-pct').value = '';
+                 document.querySelectorAll('.tip-options .chip').forEach(c => c.classList.remove('active'));
+                 document.getElementById(`tip-${pct}`)?.classList.add('active');
             } else {
-                confirmWarning.style.display = 'none';
+                 document.querySelectorAll('.tip-options .chip').forEach(c => c.classList.remove('active'));
+            }
+            window.calculateTip();
+        }
+        window.setCustomTip = function() {
+             const val = parseFloat(document.getElementById('tip-custom-pct').value);
+             if (!isNaN(val)) { window.setTipPct('custom'); currentTipPct = val; window.calculateTip(); }
+        }
+        window.adjustSplit = function(delta) {
+            const el = document.getElementById('tip-split-count');
+            let count = parseInt(el.value) || 1;
+            count = Math.max(1, count + delta);
+            el.value = count;
+            window.calculateTip();
+        }
+        window.calculateTip = function() {
+            const bill = parseFloat(document.getElementById('tip-bill-amount').value) || 0;
+            let pct = currentTipPct;
+            if (document.getElementById('tip-custom-pct').value !== '') pct = parseFloat(document.getElementById('tip-custom-pct').value) || 0;
+            const count = parseInt(document.getElementById('tip-split-count').value) || 1;
+            const tipAmt = bill * (pct / 100);
+            const total = bill + tipAmt;
+            document.getElementById('res-tip-amount').innerText = `${appSettings.currency}${tipAmt.toFixed(2)}`;
+            document.getElementById('res-total-amount').innerText = `${appSettings.currency}${total.toFixed(2)}`;
+            document.getElementById('res-per-person').innerText = `${appSettings.currency}${(total / count).toFixed(2)}`;
+        }
+
+        // --- Export Logic with Print Styles & Charts ---
+        window.exportData = function() {
+            const data = { groups: groups, friends: friends, activities: activities, appSettings: appSettings };
+            const dataStr = JSON.stringify(data, null, 2);
+            const blob = new Blob([dataStr], { type: "application/json" });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `fairshare_data_${new Date().toISOString().split('T')[0]}.json`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+        
+        window.importData = function(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    if (data.groups && data.friends && data.activities) {
+                        if(confirm("This will overwrite your current data. Are you sure?")) {
+                            groups = data.groups;
+                            friends = data.friends;
+                            activities = data.activities;
+                            if (data.appSettings) appSettings = data.appSettings;
+                            saveData();
+                            closeModal('settings-modal');
+                            alert("Data imported successfully!");
+                        }
+                    } else { alert("Invalid file format."); }
+                } catch (error) { alert("Error parsing file."); console.error(error); }
+                event.target.value = '';
+            };
+            reader.readAsText(file);
+        }
+
+        window.exportGroupHTML = function(groupId) {
+            const group = groups.find(g => g.id === groupId);
+            if (!group) return;
+            
+            const groupFriends = friends.filter(f => f.groupId === groupId);
+            const groupActivities = activities.filter(a => a.groupId === groupId);
+            const settlements = simplifyDebts(groupFriends);
+            const currency = appSettings.currency;
+
+            // Calc stats for charts
+            let totalSpent = 0;
+            const spendingByPerson = {};
+            const spendingByCategory = {};
+            const spendingByMonth = {};
+
+            groupActivities.filter(a => a.type === 'expense').forEach(act => {
+                const amt = parseFloat(act.amount);
+                totalSpent += amt;
+                
+                // Category
+                const cat = act.category || 'Uncategorized';
+                spendingByCategory[cat] = (spendingByCategory[cat] || 0) + amt;
+
+                // Month
+                const month = new Date(act.date).toLocaleString('default', { month: 'long', year: 'numeric' });
+                spendingByMonth[month] = (spendingByMonth[month] || 0) + amt;
+
+                // Person (Payer) - simpler visualization than split for now
+                if(act.payers) {
+                    act.payers.forEach(p => {
+                        const pName = groupFriends.find(f => f.id == p.id)?.name || 'Unknown';
+                        spendingByPerson[pName] = (spendingByPerson[pName] || 0) + p.amount;
+                    });
+                }
+            });
+            
+            // Calculate Breakdown Lists
+            const userExpenses = {};
+            groupFriends.forEach(f => {
+                userExpenses[f.id] = { name: f.name, paidItems: [], paidTotal: 0, sharedItems: [], sharedTotal: 0 };
+            });
+            groupActivities.filter(a => a.type !== 'settlement').forEach(act => {
+                if(act.payers) act.payers.forEach(p => { if(userExpenses[p.id]) { userExpenses[p.id].paidItems.push({desc:act.desc, amount:p.amount, date:act.date}); userExpenses[p.id].paidTotal+=p.amount; }});
+                if(act.consumers) act.consumers.forEach(c => { if(userExpenses[c.id]) { userExpenses[c.id].sharedItems.push({desc:act.desc, amount:c.amount, date:act.date}); userExpenses[c.id].sharedTotal+=c.amount; }});
+            });
+            
+            // Sort Lists
+            Object.values(userExpenses).forEach(data => {
+                data.paidItems.sort((a,b) => new Date(b.date) - new Date(a.date));
+                data.sharedItems.sort((a,b) => new Date(b.date) - new Date(a.date));
+            });
+            
+            // Render Breakdown
+            const breakdownHTML = Object.values(userExpenses).map(data => {
+                const net = data.paidTotal - data.sharedTotal;
+                const netColor = net >= 0 ? 'positive' : 'negative';
+                const netText = net >= 0 ? `Gets back ${currency}${Math.abs(net).toFixed(2)}` : `Owes ${currency}${Math.abs(net).toFixed(2)}`;
+                const renderList = (items) => items.length ? items.map(i => `<div class="list-row"><span>${i.desc} <span style="color:#999;font-size:0.8em;">(${new Date(i.date).toLocaleDateString()})</span></span><span>${currency}${i.amount.toFixed(2)}</span></div>`).join('') : '<div class="empty-list">-</div>';
+                return `<div class="user-block"><div class="user-header"><h3>${data.name}</h3><span class="amount ${netColor}">${netText}</span></div><div class="columns"><div class="column"><div class="col-title" style="color:#1cc29f;">Paid (${currency}${data.paidTotal.toFixed(2)})</div>${renderList(data.paidItems)}</div><div class="column"><div class="col-title" style="color:#e67e22;">Shared (${currency}${data.sharedTotal.toFixed(2)})</div>${renderList(data.sharedItems)}</div></div></div>`;
+            }).join('');
+
+            // Helper for Bar Chart
+            const renderBar = (label, val, total, color) => {
+                const pct = total > 0 ? (val / total) * 100 : 0;
+                return `<div style="margin-bottom:12px;"><div style="display:flex; justify-content:space-between; font-size:0.9rem; margin-bottom:4px; font-weight:500;"><span>${label}</span><span>${currency}${val.toFixed(2)} <span style="color:#999; font-size:0.8em; font-weight:400;">(${pct.toFixed(1)}%)</span></span></div><div style="background:#f0f0f0; height:12px; border-radius:6px; overflow:hidden;"><div style="background:${color}; height:100%; width:${pct}%"></div></div></div>`;
+            };
+            const personChartHTML = Object.entries(spendingByPerson).sort((a,b) => b[1] - a[1]).map(([k,v]) => renderBar(k, v, totalSpent, '#1cc29f')).join('');
+            const categoryChartHTML = Object.entries(spendingByCategory).sort((a,b) => b[1] - a[1]).map(([k,v]) => renderBar(k, v, totalSpent, '#3b82f6')).join('');
+            
+            // Settlement Flow Boxes
+            const settlementFlowHTML = settlements.map(s => `
+                <div style="display:flex; align-items:center; gap:8px; padding:10px 0; border-bottom: 1px dashed #eee;">
+                    <span style="font-weight:600; color:#444;">${s.from}</span>
+                    <span style="color:#aaa;">pays</span>
+                    <strong style="color:#1cc29f;">${currency}${s.amount.toFixed(2)}</strong>
+                    <span style="color:#aaa;">to</span>
+                    <span style="font-weight:600; color:#444;">${s.to}</span>
+                </div>
+            `).join('') || '<div style="text-align:center; color:#555; font-style:italic;">Everyone is settled up!</div>';
+
+            let html = `
+            <!DOCTYPE html>
+            <html>
+            <head><meta charset="UTF-8"><title>${group.name} Report</title>
+            <style>
+                body { font-family: sans-serif; padding: 40px; max-width: 800px; margin: 0 auto; color: #333; }
+                h1 { color: #1cc29f; border-bottom: 2px solid #eee; padding-bottom: 10px; }
+                h2 { margin-top: 30px; font-size: 1.2rem; color: #555; border-bottom: 1px solid #eee; padding-bottom: 5px; }
+                table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+                th, td { padding: 10px; text-align: left; border-bottom: 1px solid #eee; }
+                th { background-color: #f8fcfb; }
+                .amount { font-weight: bold; font-family: monospace; }
+                .positive { color: #1cc29f; } .negative { color: #ff6565; }
+                .chart-box { display: flex; gap: 20px; flex-wrap: wrap; }
+                .chart-col { flex: 1; min-width: 250px; border: 1px solid #eee; padding: 15px; border-radius: 8px; }
+                .user-block { margin-bottom: 25px; border: 1px solid #eee; border-radius: 8px; overflow: hidden; page-break-inside: avoid; }
+                .user-header { background: #f9f9f9; padding: 10px 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; }
+                .user-header h3 { margin: 0; font-size: 1.1rem; }
+                .columns { display: flex; }
+                .column { flex: 1; padding: 15px; font-size: 0.9rem; }
+                .column:first-child { border-right: 1px solid #eee; }
+                .col-title { font-weight: 700; text-transform: uppercase; font-size: 0.8rem; margin-bottom: 10px; }
+                .list-row { display: flex; justify-content: space-between; margin-bottom: 6px; border-bottom: 1px dashed #f0f0f0; padding-bottom: 4px; }
+                .empty-list { font-style: italic; color: #aaa; }
+                .settlement-flow { border: 1px solid #1cc29f; padding: 15px; border-radius: 8px; background: #f0fdf9; }
+                @media print { body { padding: 0; } .no-print { display: none; } .chart-box, .user-block { page-break-inside: avoid; } }
+            </style>
+            </head>
+            <body>
+                <div style="text-align:right; color:#888; font-size:0.8rem;">Generated ${new Date().toLocaleDateString()}</div>
+                <h1>${group.name} Report</h1>
+                
+                <div style="margin-bottom: 30px; font-size: 1.2rem;"><strong>Total Group Spending:</strong> <span style="color:#1cc29f;">${currency}${totalSpent.toFixed(2)}</span></div>
+
+                <h2>Spending Overview</h2>
+                <div class="chart-box">
+                    <div class="chart-col"><h3>Spending by Person (Paid)</h3>${personChartHTML || '<div style="color:#999; font-style:italic;">No data</div>'}</div>
+                    <div class="chart-col"><h3>Spending by Category</h3>${categoryChartHTML || '<div style="color:#999; font-style:italic;">No data</div>'}</div>
+                </div>
+
+                <h2>Net Balances</h2>
+                <table><thead><tr><th>Participant</th><th>Net Balance</th></tr></thead><tbody>
+                        ${groupFriends.map(f => `<tr><td>${f.name}</td><td class="${f.balance>=0?'positive':'negative'} amount">${f.balance>=0?'+':''}${currency}${f.balance.toFixed(2)}</td></tr>`).join('')}
+                </tbody></table>
+                
+                <h2>Suggested Settlements</h2>
+                <div class="settlement-flow">
+                    ${settlementFlowHTML}
+                </div>
+                
+                <h2>Member Breakdown</h2>
+                ${breakdownHTML}
+
+                <h2>Activity Ledger</h2>
+                <table><thead><tr><th>Date</th><th>Description</th><th>Category</th><th>Type</th><th>Amount</th><th>Payer</th></tr></thead><tbody>
+                        ${groupActivities.slice().reverse().map(act => {
+                             const dateStr = new Date(act.date).toLocaleDateString();
+                             const isSettle = act.type === 'settlement';
+                             return `<tr><td>${dateStr}</td><td>${act.desc||(isSettle?'Payment':'Expense')}</td><td>${act.category||'-'}</td><td>${isSettle?'Settlement':'Expense'}</td><td class="amount">${currency}${act.amount.toFixed(2)}</td><td>${act.payerName} ${isSettle?'&#8594; '+act.recipientName:''}</td></tr>`;
+                        }).join('')}
+                </tbody></table>
+            </body></html>`;
+            
+            const blob = new Blob([html], { type: 'text/html' });
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = `${group.name.replace(/[^a-z0-9]/gi, '_')}_Report.html`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        }
+        
+        // --- Remaining Core Logic ---
+
+        function recalculateAllBalances() {
+            friends.forEach(f => f.balance = 0);
+            activities.forEach(act => {
+                const amt = parseFloat(act.amount)||0;
+                if(act.type==='expense') {
+                    if(act.payers) act.payers.forEach(p=>{const f=friends.find(x=>x.id==p.id); if(f && f.groupId==act.groupId) f.balance+=parseFloat(p.amount); });
+                    if(act.consumers) act.consumers.forEach(c=>{const f=friends.find(x=>x.id==c.id); if(f && f.groupId==act.groupId) f.balance-=parseFloat(c.amount); });
+                } else if(act.type==='settlement') {
+                    if(act.payerId && act.recipientId) {
+                        const p = friends.find(x=>x.id==act.payerId);
+                        const r = friends.find(x=>x.id==act.recipientId);
+                        if(p && p.groupId==act.groupId) p.balance+=amt;
+                        if(r && r.groupId==act.groupId) r.balance-=amt;
+                    }
+                }
+            });
+        }
+        
+        function calculateTotals() {
+            let totalPositive = 0;
+            let totalNegative = 0;
+
+            const friendsToSum = expandedGroupId 
+                ? friends.filter(f => f.groupId === expandedGroupId)
+                : friends;
+
+            friendsToSum.forEach(f => {
+                if (f.balance > 0) totalPositive += f.balance;
+                if (f.balance < 0) totalNegative += Math.abs(f.balance);
+            });
+            
+            totalOwedEl.innerText = `${appSettings.currency}${totalPositive.toFixed(2)}`;
+            totalOweEl.innerText = `${appSettings.currency}${totalNegative.toFixed(2)}`;
+        }
+
+        function toggleShowArchived(checked) {
+            appSettings.showArchived = checked;
+            saveData();
+        }
+        
+        // FIX: Renamed updateCurrency to break recursion loop
+        function updateCurrencyUI() {
+             document.querySelectorAll('.currency-dynamic').forEach(el => el.innerText = appSettings.currency);
+        }
+
+        function updateCurrencyAndSave(currency) {
+            appSettings.currency = currency;
+            updateCurrencyUI();
+            saveData(); // Only save/render when the setting is changed by the user
+        }
+
+        function render() {
+            updateCurrencyUI(); // Update symbols first
+            recalculateAllBalances();
+            calculateTotals();
+            // Render Friends List
+            friendsListEl.innerHTML = '';
+            if (groups.length === 0) friendsListEl.innerHTML = '<div class="empty-state">No groups</div>';
+            
+            // Sort groups by ID (creation time) descending
+            const sortedGroups = [...groups].sort((a, b) => b.id - a.id);
+
+            sortedGroups.filter(g => !g.archived || appSettings.showArchived).forEach(g => {
+                const gFriends = friends.filter(f => f.groupId === g.id);
+                const isExpanded = g.id === expandedGroupId;
+                const div = document.createElement('div');
+                div.className = `group-block ${isExpanded?'expanded':''} ${g.archived?'archived':''}`;
+                div.innerHTML = `
+                <div class="group-header" onclick="toggleGroup(${g.id})">
+                    <div class="group-header-left"><span class="group-chevron">›</span><span>${g.name} ${g.archived?'(Archived)':''}</span></div>
+                    <div class="group-actions">
+                         <button class="btn-icon-group settle" onclick="event.stopPropagation(); openSettleModal(${g.id})">🤝</button>
+                         <button class="btn-icon-group breakdown" onclick="event.stopPropagation(); openBreakdownModal(${g.id})">📄</button>
+                         <button class="btn-icon-group summary" onclick="event.stopPropagation(); openSummaryModal(${g.id})">📊</button>
+                         <button class="btn-icon-group export" onclick="event.stopPropagation(); exportGroupHTML(${g.id})">📤</button>
+                         <button class="btn-icon-group archive" onclick="event.stopPropagation(); initiateArchiveGroup(${g.id})">📂</button>
+                         <button class="btn-icon-group delete" onclick="event.stopPropagation(); initiateDeleteGroup(${g.id})">&times;</button>
+                    </div>
+                </div>
+                <div class="group-content">
+                    ${gFriends.length ? gFriends.map(f => `<div class="list-item"><div class="item-left"><div class="user-avatar">${f.name.charAt(0)}</div><div class="item-details"><h3>${f.name}</h3></div></div><div style="display:flex;align-items:center;"><div class="item-right"><span class="status">${f.balance>0.01?'gets back':(f.balance<-0.01?'owes':'settled up')}</span><span class="value ${f.balance>=0?'text-green':'text-red'}">${appSettings.currency}${Math.abs(f.balance).toFixed(2)}</span></div><button class="btn-delete-friend" onclick="initiateDeleteFriend(${f.id})">&times;</button></div></div>`).join('') : '<div class="empty-state">No members</div>'}
+                </div>`;
+                friendsListEl.appendChild(div);
+            });
+            renderActivity();
+        }
+        
+        function renderActivity() {
+            const query = searchInput.value.toLowerCase();
+            let displayActs = activities;
+            if (expandedGroupId) displayActs = activities.filter(a => a.groupId === expandedGroupId);
+            
+            if(query) {
+                displayActs = displayActs.filter(a => a.desc.toLowerCase().includes(query) || a.amount.toString().includes(query) || a.payerName.toLowerCase().includes(query));
+            }
+
+            if (displayActs.length === 0) {
+                activityListEl.innerHTML = '<div class="empty-state">No activity found</div>';
+                return;
             }
             
-            btnConfirmAction.onclick = executeDeleteGroup;
+            activityListEl.innerHTML = [...displayActs].reverse().map(act => {
+                const dateStr = new Date(act.date).toLocaleDateString(undefined, {month:'short', day:'numeric'});
+                const cur = appSettings.currency;
+                if(act.type === 'settlement') {
+                    return `<div class="list-item settlement"><div class="item-left"><div class="icon-box">🤝</div><div class="item-details"><h3>${act.payerName} paid ${act.recipientName}</h3><p>Settlement</p></div></div><div class="item-right"><span class="status">${dateStr}</span><span class="value text-green">${cur}${parseFloat(act.amount).toFixed(2)}</span></div><button class="btn-edit-activity" onclick="initiateDeleteActivity(${act.id})" style="margin-left:4px; color:var(--danger);">🗑</button></div>`;
+                }
+                // Expense
+                let sub = `${act.payerName} paid ${cur}${parseFloat(act.amount).toFixed(2)}`;
+                if(act.payers && act.payers.length > 1) sub = `Multiple people paid ${cur}${parseFloat(act.amount).toFixed(2)}`;
+                const categoryIcon = act.category ? act.category.split(' ')[0] : '🧾'; 
+                
+                let sharedText = "Group";
+                if(act.consumers && act.consumers.length > 0) {
+                     const groupMems = friends.filter(f=>f.groupId==act.groupId).length;
+                     if(act.consumers.length == groupMems) sharedText = "Everyone";
+                     else if(act.consumers.length <= 2) {
+                         const names = act.consumers.map(c => { const f = friends.find(x=>x.id==c.id); return f ? f.name.split(' ')[0] : '?'; });
+                         sharedText = names.join(' & ');
+                     } else {
+                         const f = friends.find(x=>x.id==act.consumers[0].id);
+                         const name = f ? f.name.split(' ')[0] : '?';
+                         sharedText = `${name} +${act.consumers.length-1}`;
+                     }
+                }
+
+                return `<div class="list-item"><div class="item-left"><div class="icon-box" title="${act.category||''}">${categoryIcon}</div><div class="item-details"><h3>${act.desc}</h3><p>${sub}</p></div></div><div class="item-right"><div style="text-align:right;"><span class="status">${dateStr}</span><span class="value text-gray" style="font-size:0.8rem;">${sharedText}</span></div></div><div style="display:flex;"><button class="btn-edit-activity" onclick="openEditModal(${act.id})">✎</button><button class="btn-edit-activity" onclick="initiateDeleteActivity(${act.id})" style="margin-left:4px; color:var(--danger);">🗑</button></div></div>`;
+            }).join('');
+        }
+        
+        function toggleGroup(id) { expandedGroupId = (expandedGroupId===id) ? null : id; render(); }
+        window.toggleGroup = toggleGroup;
+        
+        // --- Other Window Assignments (Deleted logic removed for brevity) ---
+        window.updateCurrencyAndSave = updateCurrencyAndSave;
+        window.toggleShowArchived = toggleShowArchived;
+        window.exportGroupHTML = exportGroupHTML;
+        
+        // --- Deletion Logic Assignments ---
+        window.initiateArchiveGroup = function(id) {
+             const group = groups.find(g => g.id === id);
+             if (group) {
+                 group.archived = !group.archived;
+                 if (group.archived && expandedGroupId === id) expandedGroupId = null;
+                 saveData();
+             }
+        }
+        
+        window.initiateDeleteGroup = function(id) {
+            groupToDeleteId = id;
+            const gFriends = friends.filter(f => f.groupId === id);
+            const hasBalance = gFriends.some(f => Math.abs(f.balance) > 0.01);
+            confirmTitle.innerText = "Delete Group";
+            confirmMessage.innerText = `Are you sure you want to delete "${groups.find(g=>g.id===id)?.name}" and all its members?`;
+            confirmWarning.style.display = hasBalance ? 'block' : 'none';
+            confirmWarning.innerText = hasBalance ? "WARNING: This group has unpaid balances! Deleting it will remove those debts." : '';
+            btnConfirmAction.onclick = window.executeDeleteGroup;
             btnConfirmAction.innerText = "Delete Group";
-            
             confirmModal.classList.add('active');
         }
 
-        function executeDeleteGroup() {
+        window.executeDeleteGroup = function() {
             if (groupToDeleteId === null) return;
-            
             if(expandedGroupId === groupToDeleteId) expandedGroupId = null;
-            
             groups = groups.filter(g => g.id !== groupToDeleteId);
             friends = friends.filter(f => f.groupId !== groupToDeleteId);
-            // Also cleanup activities for this group
             activities = activities.filter(a => a.groupId !== groupToDeleteId);
-            
             saveData();
             closeModal('confirm-modal');
             groupToDeleteId = null;
         }
-        
-        // New: Friend Deletion
-        function initiateDeleteFriend(id) {
+
+        window.initiateDeleteFriend = function(id) {
             friendToDeleteId = id;
             const friend = friends.find(f => f.id === id);
-            if(!friend) return;
-
-            confirmTitle.innerText = "Remove Member";
-            confirmMessage.innerText = `Are you sure you want to remove ${friend.name} from the group?`;
-            
-            if (Math.abs(friend.balance) > 0.01) {
-                confirmWarning.style.display = 'block';
-                confirmWarning.innerText = `WARNING: ${friend.name} has a balance of $${friend.balance.toFixed(2)}. Removing them will delete this balance record.`;
-            } else {
-                confirmWarning.style.display = 'none';
-            }
-            
-            btnConfirmAction.onclick = executeDeleteFriend;
-            btnConfirmAction.innerText = "Remove Member";
-            
+            if (!friend) return;
+            const hasBalance = Math.abs(friend.balance) > 0.01;
+            confirmTitle.innerText = "Delete Friend";
+            confirmMessage.innerText = `Are you sure you want to delete ${friend.name} from their group?`;
+            confirmWarning.style.display = hasBalance ? 'block' : 'none';
+            confirmWarning.innerText = hasBalance ? `WARNING: ${friend.name} has an outstanding balance of ${appSettings.currency}${Math.abs(friend.balance).toFixed(2)}. Deleting will remove this debt.` : '';
+            btnConfirmAction.onclick = window.executeDeleteFriend;
+            btnConfirmAction.innerText = "Delete Friend";
             confirmModal.classList.add('active');
         }
 
-        function executeDeleteFriend() {
+        window.executeDeleteFriend = function() {
             if (friendToDeleteId === null) return;
-
-            // Remove friend
             friends = friends.filter(f => f.id !== friendToDeleteId);
-            
-            // Note: We do NOT delete historical activities involving this friend
-            // so the total group history remains intact. 
-            // However, recalculateBalances will gracefully skip this friend ID
-            // effectively removing their current balance from the view.
-
+            // Activities cleanup should happen during recalculation if IDs are gone, but we rely on replay
             saveData();
             closeModal('confirm-modal');
             friendToDeleteId = null;
         }
         
-        function initiateDeleteActivity(id) {
+        window.initiateDeleteActivity = function(id) {
             activityToDeleteId = id;
             const act = activities.find(a => a.id === id);
-            
             if(!act) return;
-
             confirmTitle.innerText = "Delete Expense";
             confirmMessage.innerText = `Are you sure you want to delete "${act.desc || 'this item'}"? This will reverse the balances.`;
             confirmWarning.style.display = 'none';
-            
-            btnConfirmAction.onclick = executeDeleteActivity;
+            btnConfirmAction.onclick = window.executeDeleteActivity;
             btnConfirmAction.innerText = "Delete Expense";
-            
             confirmModal.classList.add('active');
         }
 
-        function executeDeleteActivity() {
+        window.executeDeleteActivity = function() {
             if (activityToDeleteId === null) return;
-
-            // Simply remove it. Recalculate() on render will handle the balance updates.
             activities = activities.filter(a => a.id !== activityToDeleteId);
-
             saveData();
             closeModal('confirm-modal');
             activityToDeleteId = null;
         }
 
-        function updateDropdowns() {
+        window.openEditModal = function(actId) {
+            const act = activities.find(a => a.id === actId);
+            if(!act || act.type === 'settlement') {
+                alert("Cannot edit this item.");
+                return;
+            }
+            editingActivityId = actId;
+            expenseModalTitle.innerText = "Edit expense";
+            btnSaveExpense.innerText = "Update Expense";
+            expenseModal.classList.add('active');
+            
+            // Populating logic here (restored for full functionality)
+            window.updateDropdowns();
+            expenseGroupSelect.value = act.groupId;
+            expenseGroupSelect.disabled = true; 
+            
+            document.getElementById('desc-input').value = act.desc;
+            document.getElementById('amount-input').value = act.amount;
+            document.getElementById('category-input').value = act.category || '';
+            dateInput.value = act.date;
+            
+            currentSplitMethod = null;
+            window.setSplitMethod(act.splitMethod || 'equal'); 
+            
+            if(act.payers.length > 1) {
+                payerSelect.value = 'multiple';
+                window.handlePayerChange();
+                setTimeout(() => {
+                    act.payers.forEach(p => {
+                        const inp = multiPayerContainer.querySelector(`input[data-id="${p.id}"]`);
+                        if(inp) inp.value = p.amount;
+                    });
+                    window.updateRemainingBalance();
+                }, 0);
+            } else {
+                if (act.payers.length > 0) {
+                    payerSelect.value = act.payers[0].id;
+                }
+                window.handlePayerChange();
+            }
+            
+            setTimeout(() => {
+                const consumerIds = act.consumers.map(c => c.id);
+                if(act.splitMethod === 'equal') {
+                    splitContainer.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+                        const isChecked = consumerIds.includes(parseInt(cb.value));
+                        cb.checked = isChecked;
+                        cb.closest('.chip').classList.toggle('selected', isChecked);
+                    });
+                } else if (act.splitMethod === 'shares') {
+                     act.consumers.forEach(c => {
+                         const inp = splitContainer.querySelector(`input[data-id="${c.id}"]`);
+                         if(inp && c.shares) inp.value = c.shares;
+                     });
+                } else if (act.splitMethod === 'percent') {
+                    act.consumers.forEach(c => {
+                         const pct = (c.amount / act.amount) * 100;
+                         const inp = splitContainer.querySelector(`input[data-id="${c.id}"]`);
+                         if(inp && c.percent) inp.value = c.percent.toFixed(1);
+                    });
+                }
+                window.updateSplitSummary();
+            }, 50);
+        }
+
+        window.updateDropdowns = function() {
             if(expenseGroupSelect) {
                 const currentVal = expenseGroupSelect.value;
-                expenseGroupSelect.innerHTML = groups.map(g => 
+                const activeGroups = groups.filter(g => !g.archived);
+                expenseGroupSelect.innerHTML = activeGroups.map(g => 
                     `<option value="${g.id}">${g.name}</option>`
                 ).join('');
-                
-                // FIX: Ensure a value is always selected to prevent blank lists
-                if (currentVal && groups.some(g => g.id == currentVal)) {
+                if (currentVal && activeGroups.some(g => g.id == currentVal)) {
                     expenseGroupSelect.value = currentVal;
-                } else if (groups.length > 0) {
-                    expenseGroupSelect.value = groups[0].id;
+                } else if (activeGroups.length > 0) {
+                    expenseGroupSelect.value = activeGroups[0].id;
                 }
             }
             if(groupSelectAssign) {
-                groupSelectAssign.innerHTML = groups.map(g => 
+                const activeGroups = groups.filter(g => !g.archived).sort((a, b) => a.id - b.id);
+                groupSelectAssign.innerHTML = activeGroups.map(g => 
                     `<option value="${g.id}">${g.name}</option>`
                 ).join('');
+                 // Set default to the newest group (last in sorted list)
+                if (activeGroups.length > 0) {
+                    groupSelectAssign.value = activeGroups[activeGroups.length - 1].id;
+                }
             }
         }
+        
+        // --- Activity Form Logic (Restored) ---
+        window.handlePayerChange = function() {
+            const isMultiple = payerSelect.value === 'multiple';
+            const amountInput = document.getElementById('amount-input');
+            
+            if (isMultiple) {
+                multiPayerContainer.style.display = 'block';
+                // amountInput.readOnly = true; // Decided against this for better UX
+                window.updateRemainingBalance();
+            } else {
+                multiPayerContainer.style.display = 'none';
+                amountInput.readOnly = false;
+            }
+        }
+        
+        window.updateRemainingBalance = function() {
+            const totalAmount = parseFloat(document.getElementById('amount-input').value) || 0;
+            const inputs = multiPayerContainer.querySelectorAll('.multi-payer-input');
+            let enteredTotal = 0;
+            
+            inputs.forEach(inp => {
+                const val = parseFloat(inp.value);
+                if (!isNaN(val)) enteredTotal += val;
+            });
 
-        // --- New Expense Logic ---
-
-        function setSplitMethod(method) {
+            const remaining = totalAmount - enteredTotal;
+            const remainingEl = document.getElementById('multi-payer-remaining-display');
+            
+            if(remainingEl) {
+                if (Math.abs(remaining) < 0.01) {
+                    remainingEl.innerText = "Total matches";
+                    remainingEl.className = "multi-payer-remaining success";
+                } else if (remaining > 0) {
+                    remainingEl.innerText = `Remaining: ${appSettings.currency}${remaining.toFixed(2)}`;
+                    remainingEl.className = "multi-payer-remaining";
+                } else {
+                    remainingEl.innerText = `Over by: ${appSettings.currency}${Math.abs(remaining).toFixed(2)}`;
+                    remainingEl.className = "multi-payer-remaining error";
+                }
+            }
+        }
+        
+        window.setSplitMethod = function(method) {
             if (method === 'equal' && currentSplitMethod === 'equal') {
-                toggleSelectAll();
+                window.toggleSelectAll();
                 return;
             }
             
             currentSplitMethod = method;
             document.querySelectorAll('.split-tab').forEach(tab => tab.classList.remove('active'));
             document.getElementById(`tab-${method}`).classList.add('active');
-            updateExpenseParticipants(); 
+            window.updateExpenseParticipants(); 
         }
         
-        function toggleSelectAll() {
+        window.toggleSelectAll = function() {
             const checkboxes = splitContainer.querySelectorAll('input[type="checkbox"]');
             if (checkboxes.length === 0) return;
 
@@ -2335,10 +2502,10 @@
                     chip.classList.remove('selected');
                 }
             });
-            updateSplitSummary();
+            window.updateSplitSummary();
         }
 
-        function updateExpenseParticipants() {
+        window.updateExpenseParticipants = function() {
             const groupId = parseInt(expenseGroupSelect.value);
             if(!groupId) return;
 
@@ -2359,11 +2526,11 @@
                  payerSelect.value = groupFriends[0].id;
             }
 
-            generateMultiPayerInputs(groupFriends);
-            handlePayerChange(); 
+            window.generateMultiPayerInputs(groupFriends);
+            window.handlePayerChange(); 
 
             let splitHtml = '';
-            const createChip = (id, name, avatar) => {
+            const createChip = (id, name) => {
                 const avatarEl = `<div class="chip-avatar">${name.charAt(0).toUpperCase()}</div>`;
 
                 if (currentSplitMethod === 'equal') {
@@ -2404,14 +2571,14 @@
             };
 
             groupFriends.forEach(f => {
-                splitHtml += createChip(f.id, f.name, f.avatar);
+                splitHtml += createChip(f.id, f.name);
             });
             
             splitContainer.innerHTML = splitHtml;
-            updateSplitSummary();
+            window.updateSplitSummary();
         }
 
-        function generateMultiPayerInputs(groupFriends) {
+        window.generateMultiPayerInputs = function(groupFriends) {
             let multiHtml = ``; 
             groupFriends.forEach(f => {
                 multiHtml += `
@@ -2421,594 +2588,31 @@
                     </div>
                 `;
             });
-            multiHtml += `<div id="multi-payer-remaining-display" class="multi-payer-remaining">Remaining: $0.00</div>`;
+            multiHtml += `<div id="multi-payer-remaining-display" class="multi-payer-remaining">Remaining: ${appSettings.currency}0.00</div>`;
             multiPayerContainer.innerHTML = multiHtml;
         }
 
-        function updateRemainingBalance() {
-            const totalAmount = parseFloat(document.getElementById('amount-input').value) || 0;
-            const inputs = multiPayerContainer.querySelectorAll('.multi-payer-input');
-            let enteredTotal = 0;
-            
-            inputs.forEach(inp => {
-                const val = parseFloat(inp.value);
-                if (!isNaN(val)) enteredTotal += val;
-            });
-
-            const remaining = totalAmount - enteredTotal;
-            const remainingEl = document.getElementById('multi-payer-remaining-display');
-            
-            if(remainingEl) {
-                if (Math.abs(remaining) < 0.01) {
-                    remainingEl.innerText = "Total matches";
-                    remainingEl.className = "multi-payer-remaining success";
-                } else if (remaining > 0) {
-                    remainingEl.innerText = `Remaining: $${remaining.toFixed(2)}`;
-                    remainingEl.className = "multi-payer-remaining";
-                } else {
-                    remainingEl.innerText = `Over by: $${Math.abs(remaining).toFixed(2)}`;
-                    remainingEl.className = "multi-payer-remaining error";
-                }
-            }
-        }
-
-        function updateSplitSummary() {
+        window.updateSplitSummary = function() {
             if (currentSplitMethod === 'equal') {
                 const count = splitContainer.querySelectorAll('input[type="checkbox"]:checked').length;
                 splitSummary.innerText = `Split equally between ${count} people`;
             } else if (currentSplitMethod === 'shares') {
-                splitSummary.innerText = `Split by number of shares`;
+                const totalShares = Array.from(splitContainer.querySelectorAll('.split-input-val')).reduce((sum, inp) => sum + (parseFloat(inp.value) || 0), 0);
+                splitSummary.innerText = `Split by shares (Total Shares: ${totalShares})`;
             } else {
-                splitSummary.innerText = `Split by percentage (Total must be 100%)`;
+                const totalPct = Array.from(splitContainer.querySelectorAll('.split-input-val')).reduce((sum, inp) => sum + (parseFloat(inp.value) || 0), 0);
+                splitSummary.innerText = `Split by percentage (Total: ${totalPct.toFixed(1)}%)`;
+                if (Math.abs(totalPct - 100) > 0.1) splitSummary.style.color = 'var(--danger)';
+                else splitSummary.style.color = 'var(--text-light)';
             }
         }
 
-        function toggleChip(element) {
+        window.toggleChip = function(element) {
             element.classList.toggle('selected');
             const checkbox = element.querySelector('input');
             checkbox.checked = element.classList.contains('selected');
-            updateSplitSummary();
+            window.updateSplitSummary();
         };
-
-        function handlePayerChange() {
-            const isMultiple = payerSelect.value === 'multiple';
-            const amountInput = document.getElementById('amount-input');
-            
-            if (isMultiple) {
-                multiPayerContainer.style.display = 'block';
-                updateRemainingBalance();
-            } else {
-                multiPayerContainer.style.display = 'none';
-                amountInput.readOnly = false;
-            }
-        }
-
-        function updateTotalFromMulti() {
-            const inputs = multiPayerContainer.querySelectorAll('.multi-payer-input');
-            let total = 0;
-            inputs.forEach(inp => {
-                const val = parseFloat(inp.value);
-                if (!isNaN(val)) total += val;
-            });
-            document.getElementById('amount-input').value = total > 0 ? total : '';
-        }
-
-        function renderActivity() {
-            let displayActivities = activities;
-            
-            if (expandedGroupId !== null) {
-                displayActivities = activities.filter(a => a.groupId === expandedGroupId);
-                const groupName = groups.find(g => g.id === expandedGroupId)?.name || "Group";
-                activityHeader.innerText = `Recent Activity (${groupName})`;
-            } else {
-                activityHeader.innerText = "All Recent Activity";
-            }
-            
-            if (displayActivities.length === 0) {
-                const msg = expandedGroupId ? "No expenses recorded for this group." : "No recent activity.";
-                activityListEl.innerHTML = `<div class="empty-state">${msg}</div>`;
-                return;
-            }
-            
-            const sortedActs = [...displayActivities].reverse();
-            activityListEl.innerHTML = sortedActs.map(act => {
-                const dateObj = new Date(act.date);
-                const dateStr = isNaN(dateObj.getTime()) ? act.date : dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-                const actAmount = parseFloat(act.amount) || 0;
-
-                if (act.type === 'settlement') {
-                     return `
-                    <div class="list-item settlement">
-                        <div class="item-left">
-                            <div class="icon-box">🤝</div>
-                            <div class="item-details">
-                                <h3>${act.payerName} paid ${act.recipientName}</h3>
-                                <p>Settlement</p>
-                            </div>
-                        </div>
-                        <div class="item-right">
-                            <span class="status">${dateStr}</span>
-                            <span class="value text-green">$${actAmount.toFixed(2)}</span>
-                        </div>
-                        <button class="btn-edit-activity" onclick="initiateDeleteActivity(${act.id})" title="Delete" style="margin-left:4px; color:var(--danger); border-color:var(--border);">🗑</button>
-                    </div>
-                    `;
-                }
-
-                const isMultiplePayers = Array.isArray(act.payers) && act.payers.length > 1;
-                let subtitle = '';
-                if (isMultiplePayers) {
-                    subtitle = `Multiple people paid $${actAmount.toFixed(2)}`;
-                } else {
-                    subtitle = `${act.payerName} paid $${actAmount.toFixed(2)}`;
-                }
-                
-                let sharedByText = "Group";
-                if (Array.isArray(act.consumers) && act.consumers.length > 0) {
-                    const totalGroupMembers = friends.filter(f => f.groupId === act.groupId).length;
-                    const names = act.consumers.map(c => {
-                        const f = friends.find(friend => friend.id == c.id);
-                        return f ? f.name.split(' ')[0] : 'Unknown';
-                    });
-                    
-                    if (names.length === totalGroupMembers && totalGroupMembers > 0) {
-                        sharedByText = "Everyone";
-                    } else if (names.length === 1) {
-                        sharedByText = names[0];
-                    } else if (names.length === 2) {
-                        sharedByText = names.join(' & ');
-                    } else {
-                        sharedByText = `${names[0]}, ${names[1]} +${names.length - 2}`;
-                    }
-                }
-
-                let rightSideHtml = `
-                    <div style="display:flex; align-items:center;">
-                        <div style="text-align:right; margin-right:12px;">
-                             <span class="status">${dateStr}</span>
-                             <span class="value text-gray" style="font-size:0.85rem; font-weight:600; color:var(--text-light);" title="${sharedByText}">${sharedByText}</span>
-                        </div>
-                        <button class="btn-edit-activity" onclick="openEditModal(${act.id})" title="Edit">✎</button>
-                        <button class="btn-edit-activity" onclick="initiateDeleteActivity(${act.id})" title="Delete" style="margin-left:4px; color:var(--danger); border-color:var(--border);">🗑</button>
-                    </div>
-                `;
-                
-                return `
-                <div class="list-item ${act.type === 'settlement' ? 'settlement' : ''}">
-                    <div class="item-left">
-                        <div class="icon-box">${act.type === 'settlement' ? '🤝' : '🧾'}</div>
-                        <div class="item-details">
-                            <h3>${act.desc || (act.payerName + ' paid ' + act.recipientName)}</h3>
-                            <p>${act.type === 'settlement' ? 'Settlement' : subtitle}</p>
-                        </div>
-                    </div>
-                    <div class="item-right">
-                        ${rightSideHtml}
-                    </div>
-                </div>
-                `;
-            }).join('');
-        }
-
-        function render() {
-            try {
-                recalculateAllBalances(); // ALWAYS recalculate from scratch
-                calculateTotals();
-                renderFriends();
-                renderActivity();
-            } catch (e) {
-                console.error("Render error:", e);
-                // Fallback if data is severely corrupted
-                if(confirm("Data appears corrupted. Reset to demo defaults?")) {
-                    executeReset();
-                }
-            }
-        }
-
-        // --- Modal Management ---
-
-        function openExpenseModal() {
-            if (friends.length === 0) {
-                alertModal.classList.add('active');
-                return;
-            }
-            editingActivityId = null;
-            expenseModalTitle.innerText = "Add expense";
-            btnSaveExpense.innerText = "Save Expense";
-            expenseGroupSelect.disabled = false;
-            
-            expenseModal.classList.add('active');
-            
-            updateDropdowns();
-            
-            if (expandedGroupId) {
-                 expenseGroupSelect.value = expandedGroupId;
-            }
-            
-            // FIX: Reset currentSplitMethod to null so setSplitMethod('equal') 
-            // triggers a full render (instead of being seen as a toggle)
-            currentSplitMethod = null; 
-            setSplitMethod('equal');
-            
-            // Default Date to Today
-            dateInput.valueAsDate = new Date();
-            
-            document.getElementById('desc-input').focus();
-        }
-        
-        function openEditModal(actId) {
-            const act = activities.find(a => a.id === actId);
-            if(!act) return;
-            
-            if(!act.payers || !act.consumers) {
-                alert("Cannot edit this older expense record.");
-                return;
-            }
-
-            editingActivityId = actId;
-            expenseModalTitle.innerText = "Edit expense";
-            btnSaveExpense.innerText = "Update Expense";
-            
-            expenseModal.classList.add('active');
-            
-            updateDropdowns();
-            expenseGroupSelect.value = act.groupId;
-            expenseGroupSelect.disabled = true; 
-            
-            document.getElementById('desc-input').value = act.desc;
-            document.getElementById('amount-input').value = act.amount;
-            dateInput.value = act.date;
-            
-            // FIX: Reset method before setting to ensure UI refreshes
-            currentSplitMethod = null;
-            setSplitMethod(act.splitMethod || 'equal'); 
-            
-            if(act.payers.length > 1) {
-                payerSelect.value = 'multiple';
-                handlePayerChange();
-                setTimeout(() => {
-                    act.payers.forEach(p => {
-                        const inp = multiPayerContainer.querySelector(`input[data-id="${p.id}"]`);
-                        if(inp) inp.value = p.amount;
-                    });
-                    updateRemainingBalance();
-                }, 0);
-            } else {
-                // Ensure the value exists in the dropdown before setting it
-                if (act.payers.length > 0) {
-                    const payerId = act.payers[0].id;
-                    // Small timeout to ensure DOM is ready if needed, 
-                    // though setSplitMethod is synchronous.
-                    payerSelect.value = payerId;
-                }
-                handlePayerChange();
-            }
-            
-            // RESTORE SPLIT VALUES
-            setTimeout(() => {
-                if(act.splitMethod === 'equal') {
-                    // Deselect all first
-                    splitContainer.querySelectorAll('input[type="checkbox"]').forEach(cb => {
-                        cb.checked = false;
-                        cb.closest('.chip').classList.remove('selected');
-                    });
-                    // Select active ones
-                    act.consumers.forEach(c => {
-                        const cb = splitContainer.querySelector(`input[value="${c.id}"]`);
-                        if(cb) {
-                            cb.checked = true;
-                            cb.closest('.chip').classList.add('selected');
-                        }
-                    });
-                } else if (act.splitMethod === 'shares') {
-                     act.consumers.forEach(c => {
-                         const inp = splitContainer.querySelector(`input[data-id="${c.id}"]`);
-                         // If 'shares' is stored, use it. Otherwise default to 1 (or infer if possible, but 1 is safer for older data)
-                         if(inp && c.shares) inp.value = c.shares;
-                     });
-                } else if (act.splitMethod === 'percent') {
-                    act.consumers.forEach(c => {
-                         const inp = splitContainer.querySelector(`input[data-id="${c.id}"]`);
-                         // Use stored percentage if available, else calculate from amount
-                         if(inp) {
-                             if (c.pct) {
-                                 inp.value = c.pct;
-                             } else {
-                                 const pct = (c.amount / act.amount) * 100;
-                                 inp.value = pct.toFixed(1);
-                             }
-                         }
-                    });
-                }
-                updateSplitSummary();
-            }, 50);
-        }
-        
-        function openFriendModal() {
-            if (groups.length === 0) {
-                alertModal.classList.add('active');
-                return;
-            }
-            if (groups.length > 0) {
-                const lastGroup = groups[groups.length - 1];
-                if (groupSelectAssign) {
-                    groupSelectAssign.value = lastGroup.id;
-                }
-            }
-            friendModal.classList.add('active');
-        }
-
-        // --- Export HTML Report (New) ---
-        function exportGroupHTML(groupId) {
-            const group = groups.find(g => g.id === groupId);
-            if (!group) return;
-            
-            const groupFriends = friends.filter(f => f.groupId === groupId);
-            const allGroupActivities = activities.filter(a => a.groupId === groupId);
-            // Filter for breakdown (exclude settlements)
-            const expenseActivities = allGroupActivities.filter(a => a.type !== 'settlement');
-            const settlements = simplifyDebts(groupFriends);
-            
-            // --- Calculate Breakdown ---
-            const userExpenses = {};
-            groupFriends.forEach(f => {
-                userExpenses[f.id] = {
-                    name: f.name,
-                    paidItems: [],
-                    paidTotal: 0,
-                    sharedItems: [],
-                    sharedTotal: 0
-                };
-            });
-
-            expenseActivities.forEach(act => {
-                // Track Payments
-                if(act.payers) {
-                    act.payers.forEach(p => {
-                        if(userExpenses[p.id]) {
-                            userExpenses[p.id].paidItems.push({
-                                desc: act.desc,
-                                amount: p.amount,
-                                date: act.date
-                            });
-                            userExpenses[p.id].paidTotal += p.amount;
-                        }
-                    });
-                }
-                // Track Participation
-                if(act.consumers) {
-                    act.consumers.forEach(c => {
-                        if(userExpenses[c.id]) {
-                            userExpenses[c.id].sharedItems.push({
-                                desc: act.desc,
-                                amount: c.amount,
-                                date: act.date
-                            });
-                            userExpenses[c.id].sharedTotal += c.amount;
-                        }
-                    });
-                }
-            });
-
-            // Sort items
-            Object.values(userExpenses).forEach(data => {
-                data.paidItems.sort((a,b) => new Date(b.date) - new Date(a.date));
-                data.sharedItems.sort((a,b) => new Date(b.date) - new Date(a.date));
-            });
-
-            // Generate Breakdown HTML
-            const breakdownHTML = Object.values(userExpenses).map(data => {
-                const net = data.paidTotal - data.sharedTotal;
-                const netColor = net >= 0 ? 'positive' : 'negative';
-                const netText = net >= 0 ? `Gets back $${Math.abs(net).toFixed(2)}` : `Owes $${Math.abs(net).toFixed(2)}`;
-
-                const renderList = (items) => {
-                    if (items.length === 0) return '<div class="empty-list">-</div>';
-                    return items.map(i => `
-                        <div class="list-row">
-                            <span>${i.desc} <span style="color:#999; font-size:0.8em;">(${new Date(i.date).toLocaleDateString()})</span></span>
-                            <span>$${i.amount.toFixed(2)}</span>
-                        </div>
-                    `).join('');
-                };
-
-                return `
-                    <div class="user-block">
-                        <div class="user-header">
-                            <h3>${data.name}</h3>
-                            <span class="amount ${netColor}">${netText}</span>
-                        </div>
-                        <div class="columns">
-                            <div class="column">
-                                <div class="col-title" style="color:#1cc29f;">Paid ($${data.paidTotal.toFixed(2)})</div>
-                                ${renderList(data.paidItems)}
-                            </div>
-                            <div class="column">
-                                <div class="col-title" style="color:#e67e22;">Shared ($${data.sharedTotal.toFixed(2)})</div>
-                                ${renderList(data.sharedItems)}
-                            </div>
-                        </div>
-                    </div>
-                `;
-            }).join('');
-            
-            // Generate HTML String
-            let html = `
-            <!DOCTYPE html>
-            <html>
-            <head>
-                <meta charset="UTF-8">
-                <title>Expense Report - ${group.name}</title>
-                <style>
-                    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; padding: 40px; max-width: 900px; margin: 0 auto; color: #333; line-height: 1.5; }
-                    h1 { color: #1cc29f; border-bottom: 2px solid #eee; padding-bottom: 15px; margin-bottom: 30px; display: flex; align-items: center; gap: 10px; }
-                    h2 { margin-top: 40px; font-size: 1.4rem; color: #444; margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 8px;}
-                    table { width: 100%; border-collapse: collapse; margin-top: 10px; background: #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.05); border-radius: 8px; overflow: hidden; }
-                    th, td { padding: 12px 16px; text-align: left; border-bottom: 1px solid #eee; }
-                    th { background-color: #f8fcfb; font-weight: 600; color: #555; text-transform: uppercase; font-size: 0.85rem; letter-spacing: 0.5px; }
-                    tr:last-child td { border-bottom: none; }
-                    .amount { font-weight: 700; font-family: monospace; font-size: 1rem; }
-                    .positive { color: #1cc29f; }
-                    .negative { color: #ff6565; }
-                    .settlement-box { background: #f0fdf9; border: 1px solid #1cc29f; padding: 20px; border-radius: 8px; margin-top: 10px; }
-                    .settlement-item { margin-bottom: 8px; font-size: 1.05rem; }
-                    .timestamp { color: #888; font-size: 0.8rem; text-align: right; margin-bottom: -10px; }
-                    .badge { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 0.75rem; font-weight: 600; }
-                    .badge-expense { background: #f0f0f0; color: #555; }
-                    .badge-settle { background: #e8fcf7; color: #1cc29f; }
-
-                    /* Breakdown Styles */
-                    .user-block { margin-bottom: 25px; border: 1px solid #eee; border-radius: 8px; overflow: hidden; }
-                    .user-header { background: #f9f9f9; padding: 10px 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; }
-                    .user-header h3 { margin: 0; font-size: 1.1rem; }
-                    .columns { display: flex; }
-                    .column { flex: 1; padding: 15px; font-size: 0.9rem; }
-                    .column:first-child { border-right: 1px solid #eee; }
-                    .col-title { font-weight: 700; text-transform: uppercase; font-size: 0.8rem; margin-bottom: 10px; }
-                    .list-row { display: flex; justify-content: space-between; margin-bottom: 6px; border-bottom: 1px dashed #f0f0f0; padding-bottom: 4px; }
-                    .empty-list { font-style: italic; color: #aaa; }
-                </style>
-            </head>
-            <body>
-                <div class="timestamp">Generated on ${new Date().toLocaleString()}</div>
-                <h1>${group.name} <span style="color:#aaa; font-weight:300;">Expense Report</span></h1>
-                
-                <h2>👥 Net Balances</h2>
-                <table>
-                    <thead><tr><th>Participant</th><th>Net Balance</th><th>Status</th></tr></thead>
-                    <tbody>
-                        ${groupFriends.map(f => `
-                            <tr>
-                                <td>${f.name}</td>
-                                <td class="${f.balance >= 0 ? 'positive' : 'negative'} amount">
-                                    ${f.balance >= 0 ? '+' : ''}$${f.balance.toFixed(2)}
-                                </td>
-                                <td>${f.balance > 0.01 ? 'Gets back' : (f.balance < -0.01 ? 'Owes' : 'Settled')}</td>
-                            </tr>
-                        `).join('')}
-                    </tbody>
-                </table>
-
-                <h2>🤝 Suggested Settlements</h2>
-                ${settlements.length > 0 ? `
-                    <div class="settlement-box">
-                        ${settlements.map(s => `
-                            <div class="settlement-item">
-                                <strong>${s.from}</strong> pays <strong>${s.to}</strong>
-                                <span style="float:right; font-weight:bold;">$${s.amount.toFixed(2)}</span>
-                            </div>
-                        `).join('')}
-                    </div>
-                ` : '<div style="padding:20px; background:#f9f9f9; border-radius:8px; text-align:center; color:#888;">All settled up! No pending payments.</div>'}
-                
-                <h2>📄 Detailed Breakdown</h2>
-                ${breakdownHTML}
-
-                <h2>🧾 Activity Ledger</h2>
-                <table>
-                    <thead><tr><th>Date</th><th>Description</th><th>Type</th><th>Amount</th><th>Payer</th></tr></thead>
-                    <tbody>
-                        ${allGroupActivities.slice().reverse().map(act => {
-                             const dateStr = new Date(act.date).toLocaleDateString();
-                             const isSettle = act.type === 'settlement';
-                             return `
-                            <tr>
-                                <td>${dateStr}</td>
-                                <td>${act.desc || (isSettle ? 'Payment' : 'Expense')}</td>
-                                <td><span class="badge ${isSettle ? 'badge-settle' : 'badge-expense'}">${isSettle ? 'Settlement' : 'Expense'}</span></td>
-                                <td class="amount">$${act.amount.toFixed(2)}</td>
-                                <td>${act.payerName} ${isSettle ? '&#8594; ' + act.recipientName : ''}</td>
-                            </tr>
-                            `;
-                        }).join('')}
-                    </tbody>
-                </table>
-                
-                <div style="margin-top:50px; text-align:center; color:#aaa; font-size:0.8rem;">
-                    Generated by FairShare
-                </div>
-            </body>
-            </html>
-            `;
-            
-            // Trigger Download
-            const blob = new Blob([html], { type: 'text/html' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `${group.name.replace(/[^a-z0-9]/gi, '_')}_Report.html`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-        }
-
-        function redirectGroupCreation() {
-            closeModal('alert-modal');
-            openGroupModal();
-        }
-
-        function openGroupModal() {
-            groupModal.classList.add('active');
-        }
-
-        function closeModal(modalId) {
-            document.getElementById(modalId).classList.remove('active');
-            if(modalId === 'expense-modal') {
-                expenseForm.reset();
-                multiPayerContainer.style.display = 'none';
-                document.getElementById('amount-input').readOnly = false;
-                editingActivityId = null;
-                expenseGroupSelect.disabled = false;
-            }
-            if(modalId === 'friend-modal') friendForm.reset();
-            if(modalId === 'group-modal') groupForm.reset();
-            if(modalId === 'settle-modal') settleForm.reset();
-        }
-
-        const modals = [expenseModal, friendModal, groupModal, confirmModal, alertModal, resetModal, summaryModal, breakdownModal, settleModal, settingsModal, tipModal];
-        modals.forEach(modal => {
-            if (modal) {
-                modal.addEventListener('click', (e) => {
-                    if (e.target === modal) closeModal(modal.id);
-                });
-            }
-        });
-        
-        // Explicitly expose to window
-        window.openSettleModal = openSettleModal;
-        window.simplifyDebts = simplifyDebts;
-        window.openSummaryModal = openSummaryModal;
-        window.openEditModal = openEditModal;
-        window.initiateDeleteActivity = initiateDeleteActivity;
-        window.openBreakdownModal = openBreakdownModal;
-        window.exportGroupHTML = exportGroupHTML;
-        window.initiateDeleteGroup = initiateDeleteGroup;
-        window.initiateDeleteFriend = initiateDeleteFriend;
-        window.openSettingsModal = openSettingsModal;
-        window.exportData = exportData;
-        window.importData = importData;
-        window.openResetModal = openResetModal;
-        window.openGroupModal = openGroupModal;
-        window.openFriendModal = openFriendModal;
-        window.executeDeleteActivity = executeDeleteActivity;
-        window.executeDeleteFriend = executeDeleteFriend;
-        window.executeDeleteGroup = executeDeleteGroup;
-        window.executeReset = executeReset;
-        window.redirectGroupCreation = redirectGroupCreation;
-        window.closeModal = closeModal;
-        window.updateSettleSuggestion = updateSettleSuggestion;
-        window.updateExpenseParticipants = updateExpenseParticipants;
-        window.handlePayerChange = handlePayerChange;
-        window.updateRemainingBalance = updateRemainingBalance;
-        window.setSplitMethod = setSplitMethod;
-        window.toggleChip = toggleChip;
-        window.updateTotalFromMulti = updateTotalFromMulti;
-        // TIP CALC EXPORTS
-        window.openTipModal = openTipModal;
-        window.setTipPct = setTipPct;
-        window.setCustomTip = setCustomTip;
-        window.adjustSplit = adjustSplit;
-        window.calculateTip = calculateTip;
 
         // --- Form Submissions ---
 
@@ -3016,6 +2620,7 @@
             e.preventDefault();
             const desc = document.getElementById('desc-input').value;
             const amount = parseFloat(document.getElementById('amount-input').value);
+            const category = document.getElementById('category-input').value;
             const dateVal = dateInput.value || new Date().toISOString().split('T')[0];
             const groupId = parseInt(expenseGroupSelect.value);
             
@@ -3028,12 +2633,10 @@
                 inputs.forEach(inp => {
                     const val = parseFloat(inp.value);
                     if (!isNaN(val) && val > 0) {
-                        // FIX: Parse ID as integer
                         payers.push({ id: parseInt(inp.dataset.id), amount: val });
                     }
                 });
             } else {
-                // FIX: Parse ID as integer
                 payers.push({ id: parseInt(payerValue), amount: amount });
             }
 
@@ -3047,7 +2650,6 @@
                 
                 const costPerPerson = amount / count;
                 checkboxes.forEach(cb => {
-                    // FIX: Parse ID as integer
                     consumers.push({ id: parseInt(cb.value), amount: costPerPerson });
                 });
 
@@ -3060,7 +2662,6 @@
                     const shares = parseFloat(inp.value) || 0;
                     if (shares > 0) {
                         totalShares += shares;
-                        // FIX: Parse ID as integer
                         tempConsumers.push({ id: parseInt(inp.dataset.id), shares: shares });
                     }
                 });
@@ -3069,7 +2670,6 @@
                 
                 tempConsumers.forEach(c => {
                     const cost = (c.shares / totalShares) * amount;
-                    // FIX: Save 'shares' in the consumer object
                     consumers.push({ id: c.id, amount: cost, shares: c.shares });
                 });
 
@@ -3082,20 +2682,18 @@
                     const pct = parseFloat(inp.value) || 0;
                     if (pct > 0) {
                         totalPercent += pct;
-                        // FIX: Parse ID as integer
                         tempConsumers.push({ id: parseInt(inp.dataset.id), pct: pct });
                     }
                 });
 
                 if (Math.abs(totalPercent - 100) > 0.1) {
-                    alert(`Total percentage is ${totalPercent}%. It must be 100%.`);
+                    alert(`Total percentage is ${totalPercent.toFixed(1)}%. It must be 100%.`);
                     return;
                 }
                 
                 tempConsumers.forEach(c => {
                     const cost = (c.pct / 100) * amount;
-                    // FIX: Save 'pct' in the consumer object
-                    consumers.push({ id: c.id, amount: cost, pct: c.pct });
+                    consumers.push({ id: c.id, amount: cost, percent: c.pct });
                 });
             }
 
@@ -3107,12 +2705,12 @@
             if (payerValue === 'multiple') {
                 const sumPayers = payers.reduce((acc, p) => acc + p.amount, 0);
                 if (Math.abs(sumPayers - amount) > 0.02) {
-                    alert(`Total amount ($${amount}) does not match sum of payers ($${sumPayers}).`);
+                    alert(`Total amount (${appSettings.currency}${amount.toFixed(2)}) does not match sum of payers (${appSettings.currency}${sumPayers.toFixed(2)}).`);
                     return;
                 }
             }
 
-            // 4. Apply Logic - Just Update Array, Recalculate handles math
+            // 4. Apply Logic 
             if (editingActivityId) {
                 activities = activities.filter(a => a.id !== editingActivityId);
             }
@@ -3135,7 +2733,8 @@
                 consumers: consumers,
                 payerName: payerNameDisplay,
                 splitMethod: currentSplitMethod,
-                type: 'expense'
+                type: 'expense',
+                category: category // Save category
             };
 
             activities.push(newActivity);
@@ -3162,16 +2761,14 @@
                 return;
             }
             
-            // Find Friends
             const payer = friends.find(f => f.id === payerId);
             const recipient = friends.find(f => f.id === recipientId);
             
-            if (!payer || !recipient) {
-                alert("Error identifying selected users.");
-                return;
+            if (!payer || !recipient || payer.groupId !== recipient.groupId) {
+                 alert("Invalid transaction participants.");
+                 return;
             }
-            
-            // Create Activity with IDs for robust tracking
+
             const newActivity = {
                 id: Date.now(),
                 groupId: payer.groupId,
@@ -3181,8 +2778,8 @@
                 type: 'settlement',
                 payerName: payer.name,
                 recipientName: recipient.name,
-                payerId: payer.id,      // Saving ID is crucial
-                recipientId: recipient.id // Saving ID is crucial
+                payerId: payerId,
+                recipientId: recipientId
             };
             
             activities.push(newActivity);
@@ -3192,7 +2789,6 @@
             closeModal('settle-modal');
         });
 
-        // 2. Add Friend
         friendForm.addEventListener('submit', (e) => {
             e.preventDefault();
             const name = document.getElementById('friend-name-input').value;
@@ -3210,21 +2806,20 @@
             closeModal('friend-modal');
         });
 
-        // 3. Add Group
         groupForm.addEventListener('submit', (e) => {
             e.preventDefault();
             const name = document.getElementById('group-name-input').value;
             if (!name) return;
             const newGroup = {
                 id: Date.now(),
-                name: name
+                name: name,
+                archived: false
             };
             groups.push(newGroup);
             saveData();
             closeModal('group-modal');
         });
-
-        render();
+        
     </script>
 </body>
 </html>
