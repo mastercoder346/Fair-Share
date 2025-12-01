@@ -827,7 +827,7 @@
             color: var(--primary-dark);
         }
 
-        /* For non-selectable modes (Shares/Percent) */
+        /* For non-selectable modes (Shares/Percent/Amount) */
         .chip.input-mode {
             cursor: default;
             background: white;
@@ -849,7 +849,7 @@
             display: none;
         }
         
-        /* Split Input (Shares/Percent) */
+        /* Split Input (Shares/Percent/Amount) */
         .split-input-val {
             width: 70px;
             padding: 6px;
@@ -864,6 +864,45 @@
             color: var(--text-light);
             min-width: 16px;
         }
+        
+        /* Share Counter Styles (NEW) */
+        .share-counter-container {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .share-btn {
+            background: #f0f0f0;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 1.1rem;
+            user-select: none;
+            transition: background 0.1s;
+        }
+
+        .share-btn:hover {
+            background: #e0e0e0;
+        }
+
+        /* Hide number input arrows (Chrome/Safari/Edge/Opera) */
+        .split-input-val::-webkit-outer-spin-button,
+        .split-input-val::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        /* Hide number input arrows (Firefox) */
+        .split-input-val[type=number] {
+            -moz-appearance: textfield;
+        }
+        /* End of Share Counter Styles */
 
         /* Letter Avatar for Chips */
         .chip-avatar {
@@ -1172,7 +1211,7 @@
                     <label class="form-label">Amount</label>
                     <div class="input-group">
                         <span class="currency-symbol currency-dynamic">$</span>
-                        <input type="number" id="amount-input" class="form-input input-with-icon" placeholder="0.00" step="0.01" oninput="updateRemainingBalance()" required>
+                        <input type="number" id="amount-input" class="form-input input-with-icon" placeholder="0.00" step="0.01" oninput="updateRemainingBalance(); updateSplitSummary();" required>
                     </div>
                 </div>
 
@@ -1193,11 +1232,13 @@
                 <div class="form-group">
                     <label class="form-label">Split with whom?</label>
                     
-                    <!-- Split Tabs -->
+                    <!-- Split Tabs - UPDATED -->
                     <div class="split-tabs">
                         <div class="split-tab active" onclick="setSplitMethod('equal')" id="tab-equal">Equally</div>
                         <div class="split-tab" onclick="setSplitMethod('shares')" id="tab-shares">By Shares</div>
                         <div class="split-tab" onclick="setSplitMethod('percent')" id="tab-percent">By %</div>
+                        <!-- NEW SPLIT TAB -->
+                        <div class="split-tab" onclick="setSplitMethod('amount')" id="tab-amount">By Amount</div>
                     </div>
 
                     <!-- Dynamic List -->
@@ -1710,7 +1751,7 @@
                 }
             }
             if(groupSelectAssign) {
-                const activeGroups = groups.filter(g => !g.archived).sort((a, b) => a.id - b.id);
+                const activeGroups = groups.filter(g => !g.archived).sort((a, b) => b.id - a.id);
                 groupSelectAssign.innerHTML = activeGroups.map(g => 
                     `<option value="${g.id}">${g.name}</option>`
                 ).join('');
@@ -1833,7 +1874,7 @@
                 list.innerHTML = txs.map(t => `
                     <div class="debt-line">
                         <div class="debt-part"><div class="user-avatar" style="width:24px;height:24px;font-size:0.8rem;">${t.from.charAt(0)}</div>${t.from}</div>
-                        <div class="debt-arrow"><span>pays <span class="debt-amount">$${t.amount.toFixed(2)}</span> to</span>
+                        <div class="debt-arrow"><span>pays <span class="debt-amount">${appSettings.currency}${t.amount.toFixed(2)}</span> to</span>
                         <button class="btn-settle-small" onclick="openSettleModal(${groupId}, ${t.fromId}, ${t.toId}, ${t.amount})">Settle</button></div>
                         <div class="debt-part"><div class="user-avatar" style="width:24px;height:24px;font-size:0.8rem;">${t.to.charAt(0)}</div>${t.to}</div>
                     </div>`).join('');
@@ -2380,7 +2421,7 @@
             confirmTitle.innerText = "Delete Group";
             confirmMessage.innerText = `Are you sure you want to delete "${groups.find(g=>g.id===id)?.name}" and all its members?`;
             confirmWarning.style.display = hasBalance ? 'block' : 'none';
-            confirmWarning.innerText = hasBalance ? "WARNING: This group has unpaid balances! Deleting it will remove those debts." : '';
+            confirmWarning.innerText = hasBalance ? `WARNING: This group has unpaid balances! Deleting it will remove those debts.` : '';
             btnConfirmAction.onclick = window.executeDeleteGroup;
             btnConfirmAction.innerText = "Delete Group";
             confirmModal.classList.add('active');
@@ -2492,6 +2533,7 @@
                 } else if (act.splitMethod === 'shares') {
                      act.consumers.forEach(c => {
                          const inp = splitContainer.querySelector(`input[data-id="${c.id}"]`);
+                         // Since we are changing to buttons, read only the value of the input
                          if(inp && c.shares) inp.value = c.shares;
                      });
                 } else if (act.splitMethod === 'percent') {
@@ -2499,6 +2541,11 @@
                          const pct = (c.amount / act.amount) * 100;
                          const inp = splitContainer.querySelector(`input[data-id="${c.id}"]`);
                          if(inp && c.percent) inp.value = c.percent.toFixed(1);
+                    });
+                } else if (act.splitMethod === 'amount') { // Handle edit for 'amount' split
+                    act.consumers.forEach(c => {
+                         const inp = splitContainer.querySelector(`input[data-id="${c.id}"]`);
+                         if(inp && c.amount) inp.value = parseFloat(c.amount).toFixed(2);
                     });
                 }
                 window.updateSplitSummary();
@@ -2519,7 +2566,7 @@
                 }
             }
             if(groupSelectAssign) {
-                const activeGroups = groups.filter(g => !g.archived).sort((a, b) => a.id - b.id);
+                const activeGroups = groups.filter(g => !g.archived).sort((a, b) => b.id - a.id);
                 groupSelectAssign.innerHTML = activeGroups.map(g => 
                     `<option value="${g.id}">${g.name}</option>`
                 ).join('');
@@ -2603,6 +2650,18 @@
             window.updateSplitSummary();
         }
 
+        window.adjustShareCount = function(button, delta) {
+            const chipRight = button.closest('.chip-right');
+            const input = chipRight.querySelector('.split-input-val');
+            let currentVal = parseInt(input.value) || 0;
+            
+            let newVal = currentVal + delta;
+            newVal = Math.max(0, newVal); // Shares cannot be negative
+            
+            input.value = newVal;
+            window.updateSplitSummary();
+        }
+
         window.updateExpenseParticipants = function() {
             const groupId = parseInt(expenseGroupSelect.value);
             if(!groupId) return;
@@ -2649,7 +2708,11 @@
                             <span>${name}</span>
                         </div>
                         <div class="chip-right">
-                             <input type="number" class="split-input-val" data-id="${id}" value="1" min="0" step="1">
+                             <div class="share-counter-container">
+                                <button type="button" class="share-btn" onclick="adjustShareCount(this, -1)">-</button>
+                                <input type="number" class="split-input-val" data-id="${id}" value="1" min="0" step="1" readonly style="width: 40px; text-align: center;">
+                                <button type="button" class="share-btn" onclick="adjustShareCount(this, 1)">+</button>
+                             </div>
                              <span class="split-input-label">share(s)</span>
                         </div>
                     </div>`;
@@ -2661,8 +2724,20 @@
                             <span>${name}</span>
                         </div>
                         <div class="chip-right">
-                             <input type="number" class="split-input-val" data-id="${id}" value="0" min="0" max="100" step="0.1">
+                             <input type="number" class="split-input-val" data-id="${id}" value="0" min="0" max="100" step="0.1" oninput="updateSplitSummary()">
                              <span class="split-input-label">%</span>
+                        </div>
+                    </div>`;
+                } else if (currentSplitMethod === 'amount') { 
+                    return `
+                    <div class="chip input-mode" data-id="${id}">
+                        <div class="chip-left">
+                            ${avatarEl}
+                            <span>${name}</span>
+                        </div>
+                        <div class="chip-right">
+                             <span class="currency-symbol currency-dynamic" style="font-weight:600; font-size:1rem;">${appSettings.currency}</span>
+                             <input type="number" class="split-input-val" data-id="${id}" value="0.00" min="0" step="0.01" oninput="updateSplitSummary()" style="width: 80px;">
                         </div>
                     </div>`;
                 }
@@ -2673,6 +2748,7 @@
             });
             
             splitContainer.innerHTML = splitHtml;
+            window.updateCurrencyUI(); 
             window.updateSplitSummary();
         }
 
@@ -2691,17 +2767,40 @@
         }
 
         window.updateSplitSummary = function() {
+            const totalAmount = parseFloat(document.getElementById('amount-input').value) || 0;
+            
+            // Reset color for safety
+            splitSummary.style.color = 'var(--text-light)';
+
             if (currentSplitMethod === 'equal') {
                 const count = splitContainer.querySelectorAll('input[type="checkbox"]:checked').length;
                 splitSummary.innerText = `Split equally between ${count} people`;
             } else if (currentSplitMethod === 'shares') {
                 const totalShares = Array.from(splitContainer.querySelectorAll('.split-input-val')).reduce((sum, inp) => sum + (parseFloat(inp.value) || 0), 0);
                 splitSummary.innerText = `Split by shares (Total Shares: ${totalShares})`;
-            } else {
+            } else if (currentSplitMethod === 'percent') {
                 const totalPct = Array.from(splitContainer.querySelectorAll('.split-input-val')).reduce((sum, inp) => sum + (parseFloat(inp.value) || 0), 0);
                 splitSummary.innerText = `Split by percentage (Total: ${totalPct.toFixed(1)}%)`;
                 if (Math.abs(totalPct - 100) > 0.1) splitSummary.style.color = 'var(--danger)';
-                else splitSummary.style.color = 'var(--text-light)';
+            } else if (currentSplitMethod === 'amount') { 
+                const inputs = splitContainer.querySelectorAll('.split-input-val');
+                const sumAmounts = Array.from(inputs).reduce((sum, inp) => sum + (parseFloat(inp.value) || 0), 0);
+                const remaining = totalAmount - sumAmounts;
+                
+                let summaryText = `Split by amount (Total: ${appSettings.currency}${sumAmounts.toFixed(2)})`;
+                
+                if (Math.abs(remaining) < 0.01) {
+                    summaryText += ` - Total matched.`;
+                    splitSummary.style.color = 'var(--primary)'; // Green/Success
+                } else if (remaining > 0) {
+                    summaryText += ` - ${appSettings.currency}${remaining.toFixed(2)} remaining.`;
+                    splitSummary.style.color = 'var(--danger)';
+                } else {
+                    summaryText += ` - Over by ${appSettings.currency}${Math.abs(remaining).toFixed(2)}.`;
+                    splitSummary.style.color = 'var(--danger)';
+                }
+                
+                splitSummary.innerText = summaryText;
             }
         }
 
@@ -2744,7 +2843,11 @@
             if (currentSplitMethod === 'equal') {
                 const checkboxes = splitContainer.querySelectorAll('input[type="checkbox"]:checked');
                 const count = checkboxes.length;
-                if (count === 0) { alert("Select at least one person."); return; }
+                if (count === 0) {
+                    document.getElementById('alert-modal').querySelector('.modal-text').innerText = "Select at least one person to split the expense.";
+                    document.getElementById('alert-modal').classList.add('active');
+                    return;
+                }
                 
                 const costPerPerson = amount / count;
                 checkboxes.forEach(cb => {
@@ -2764,7 +2867,11 @@
                     }
                 });
                 
-                if (totalShares === 0) { alert("Total shares must be greater than 0."); return; }
+                if (totalShares === 0) {
+                    document.getElementById('alert-modal').querySelector('.modal-text').innerText = "Total shares must be greater than 0.";
+                    document.getElementById('alert-modal').classList.add('active');
+                    return;
+                }
                 
                 tempConsumers.forEach(c => {
                     const cost = (c.shares / totalShares) * amount;
@@ -2785,7 +2892,8 @@
                 });
 
                 if (Math.abs(totalPercent - 100) > 0.1) {
-                    alert(`Total percentage is ${totalPercent.toFixed(1)}%. It must be 100%.`);
+                    document.getElementById('alert-modal').querySelector('.modal-text').innerText = `Total percentage is ${totalPercent.toFixed(1)}%. It must be 100%.`;
+                    document.getElementById('alert-modal').classList.add('active');
                     return;
                 }
                 
@@ -2793,17 +2901,56 @@
                     const cost = (c.pct / 100) * amount;
                     consumers.push({ id: c.id, amount: cost, percent: c.pct });
                 });
+            } else if (currentSplitMethod === 'amount') { 
+                const inputs = splitContainer.querySelectorAll('.split-input-val');
+                let sumAmounts = 0;
+                let tempConsumers = [];
+                
+                inputs.forEach(inp => {
+                    const cost = parseFloat(inp.value) || 0;
+                    if (cost > 0) {
+                        sumAmounts += cost;
+                        tempConsumers.push({ id: parseInt(inp.dataset.id), amount: cost });
+                    }
+                });
+                
+                if (Math.abs(sumAmounts) < 0.01) {
+                    document.getElementById('alert-modal').querySelector('.modal-text').innerText = "Enter amounts for at least one person.";
+                    document.getElementById('alert-modal').classList.add('active');
+                    return;
+                }
+                
+                if (Math.abs(sumAmounts - amount) > 0.02) {
+                    document.getElementById('alert-modal').querySelector('.modal-text').innerText = `Total split amount (${appSettings.currency}${sumAmounts.toFixed(2)}) does not match expense amount (${appSettings.currency}${amount.toFixed(2)}).`;
+                    document.getElementById('alert-modal').classList.add('active');
+                    return;
+                }
+                
+                consumers = tempConsumers;
             }
 
             // 3. Validation
-            if (!desc || isNaN(amount) || amount <= 0) { alert("Invalid details."); return; }
-            if (payers.length === 0) { alert("Payer info missing."); return; }
-            if (consumers.length === 0) { alert("Consumer info missing."); return; }
+            if (!desc || isNaN(amount) || amount <= 0) {
+                document.getElementById('alert-modal').querySelector('.modal-text').innerText = "Please enter a valid description and amount.";
+                document.getElementById('alert-modal').classList.add('active');
+                return;
+            }
+            if (payers.length === 0) {
+                document.getElementById('alert-modal').querySelector('.modal-text').innerText = "Payer information is missing.";
+                document.getElementById('alert-modal').classList.add('active');
+                return;
+            }
+            if (consumers.length === 0) {
+                document.getElementById('alert-modal').querySelector('.modal-text').innerText = "Consumer information is missing or amounts are zero.";
+                document.getElementById('alert-modal').classList.add('active');
+                return;
+            }
 
             if (payerValue === 'multiple') {
                 const sumPayers = payers.reduce((acc, p) => acc + p.amount, 0);
                 if (Math.abs(sumPayers - amount) > 0.02) {
-                    alert(`Total amount (${appSettings.currency}${amount.toFixed(2)}) does not match sum of payers (${appSettings.currency}${sumPayers.toFixed(2)}).`);
+                    document.getElementById('alert-modal').querySelector('.modal-text').innerText = `Total amount (${appSettings.currency}${amount.toFixed(2)}) does not match sum of payers (${appSettings.currency}${sumPayers.toFixed(2)}).`;
+                    document.getElementById('alert-modal').classList.add('active');
                     return;
                 }
             }
@@ -2850,12 +2997,14 @@
             const dateVal = settleDateInput.value;
             
             if(payerId === recipientId) {
-                alert("Payer and recipient cannot be the same person.");
+                document.getElementById('alert-modal').querySelector('.modal-text').innerText = "Payer and recipient cannot be the same person.";
+                document.getElementById('alert-modal').classList.add('active');
                 return;
             }
             
             if(isNaN(amount) || amount <= 0) {
-                alert("Please enter a valid amount.");
+                document.getElementById('alert-modal').querySelector('.modal-text').innerText = "Please enter a valid amount.";
+                document.getElementById('alert-modal').classList.add('active');
                 return;
             }
             
@@ -2863,7 +3012,8 @@
             const recipient = friends.find(f => f.id === recipientId);
             
             if (!payer || !recipient || payer.groupId !== recipient.groupId) {
-                 alert("Invalid transaction participants.");
+                 document.getElementById('alert-modal').querySelector('.modal-text').innerText = "Invalid transaction participants.";
+                 document.getElementById('alert-modal').classList.add('active');
                  return;
             }
 
